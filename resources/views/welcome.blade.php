@@ -10,21 +10,36 @@
                     </div>
                     <form class="yourform" action="{{ route('login') }}" method="post">
                         @csrf
-                        <h3 class="heading">Admin Login</h3>
+                        <h3 class="heading">
+                            <i class="fas fa-book-reader"></i> Library Login
+                        </h3>
                         <div class="form-group">
-                            <label>Username</label>
+                            <label><i class="fas fa-user"></i> Username</label>
                             <input type="text" name="username" class="form-control" value="{{ old('username') }}"
-                                required>
+                                placeholder="Enter your username" required>
                         </div>
                         <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" name="password" class="form-control" value="" required>
+                            <label><i class="fas fa-lock"></i> Password</label>
+                            <input type="password" name="password" class="form-control" 
+                                placeholder="Enter your password" required>
                         </div>
-                        <input type="submit" name="login" class="btn btn-danger" value="login" />
+                        <button type="submit" name="login" class="btn btn-danger btn-lg btn-block">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </button>
+                        <div class="mt-4 text-center">
+                            <p class="text-white">Don't have an account? 
+                                <a href="{{ route('register') }}" style="color: #fff; font-weight: 600; text-decoration: underline;">
+                                    Register Here
+                                </a>
+                            </p>
+                        </div>
                     </form>
                     @error('username')
                         <div class='alert alert-danger'>{{ $message }}</div>
                     @enderror
+                    @if(session('success'))
+                        <div class='alert alert-success'>{{ session('success') }}</div>
+                    @endif
                 </div>
             </div>
         </div>

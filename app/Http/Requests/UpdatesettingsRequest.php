@@ -24,8 +24,12 @@ class UpdatesettingsRequest extends FormRequest
     public function rules()
     {
         return [
-            'return_days' => 'required',
-            'fine' => 'required',
+            'return_days' => 'required|integer|min:1|max:365',
+            'fine_per_day' => 'required|numeric|min:0',
+            'fine_grace_period_days' => 'required|integer|min:0|max:30',
+            'max_borrowing_limit_student' => 'required|integer|min:1|max:50',
+            'max_borrowing_limit_teacher' => 'required|integer|min:1|max:50',
+            'max_borrowing_limit_librarian' => 'required|integer|min:1|max:50',
         ];
     }
 }

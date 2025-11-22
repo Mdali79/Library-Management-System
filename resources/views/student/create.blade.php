@@ -2,12 +2,16 @@
 @section('content')
     <div id="admin-content">
         <div class="container">
-            <div class="row">
-                <div class="col-md-3">
-                    <h2 class="admin-heading">Add Student</h2>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2 class="admin-heading">
+                        <i class="fas fa-user-plus"></i> Add Member
+                    </h2>
                 </div>
-                <div class="offset-md-7 col-md-2">
-                    <a class="add-new" href="{{ route('students') }}">All Students</a>
+                <div class="col-md-6 text-right">
+                    <a class="add-new" href="{{ route('students') }}">
+                        <i class="fas fa-list"></i> All Members
+                    </a>
                 </div>
             </div>
             <div class="row">
@@ -86,7 +90,62 @@
                                 </div>
                             @enderror
                         </div>
-                        <input type="submit" name="save" class="btn btn-danger" value="save">
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select name="role" class="form-control">
+                                <option value="Student" {{ old('role') == 'Student' ? 'selected' : '' }}>Student</option>
+                                <option value="Teacher" {{ old('role') == 'Teacher' ? 'selected' : '' }}>Teacher</option>
+                                <option value="Librarian" {{ old('role') == 'Librarian' ? 'selected' : '' }}>Librarian</option>
+                            </select>
+                            @error('role')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Department</label>
+                            <input type="text" class="form-control" placeholder="Department" name="department"
+                                value="{{ old('department') }}">
+                            @error('department')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Batch</label>
+                            <input type="text" class="form-control" placeholder="Batch" name="batch"
+                                value="{{ old('batch') }}">
+                            @error('batch')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Roll Number</label>
+                            <input type="text" class="form-control" placeholder="Roll Number" name="roll"
+                                value="{{ old('roll') }}">
+                            @error('roll')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Registration/ID Number</label>
+                            <input type="text" class="form-control" placeholder="Reg. No / ID" name="reg_no"
+                                value="{{ old('reg_no') }}">
+                            @error('reg_no')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">
+                            <i class="fas fa-save"></i> Save Member
+                        </button>
                     </form>
                 </div>
             </div>

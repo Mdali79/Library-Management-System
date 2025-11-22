@@ -29,7 +29,12 @@ Route::get('/', function () {
 })->middleware('guest');
 Route::post('/', [LoginController::class, 'login'])->name('login');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-// Route::post('/Change-password', [LoginController::class, 'changePassword'])->name('change_password');
+
+// Registration routes
+Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])->name('register.store');
+Route::get('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify');
+Route::post('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify.store');
 
 
 Route::middleware('auth')->group(function () {
@@ -90,13 +95,36 @@ Route::middleware('auth')->group(function () {
     Route::post('/book-issue/delete/{id}', [BookIssueController::class, 'destroy'])->name('book_issue.destroy');
     Route::post('/book-issue/create', [BookIssueController::class, 'store'])->name('book_issue.store');
 
+    // Reports routes
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
     Route::get('/reports/Date-Wise', [ReportsController::class, 'date_wise'])->name('reports.date_wise');
     Route::post('/reports/Date-Wise', [ReportsController::class, 'generate_date_wise_report'])->name('reports.date_wise_generate');
     Route::get('/reports/monthly-Wise', [ReportsController::class, 'month_wise'])->name('reports.month_wise');
     Route::post('/reports/monthly-Wise', [ReportsController::class, 'generate_month_wise_report'])->name('reports.month_wise_generate');
     Route::get('/reports/not-returned', [ReportsController::class, 'not_returned'])->name('reports.not_returned');
+    Route::get('/reports/book-report', [ReportsController::class, 'bookReport'])->name('reports.book');
+    Route::get('/reports/member-report', [ReportsController::class, 'memberReport'])->name('reports.member');
+    Route::get('/reports/return-report', [ReportsController::class, 'returnReport'])->name('reports.return');
+    Route::get('/reports/overdue-report', [ReportsController::class, 'overdueReport'])->name('reports.overdue');
+    Route::get('/reports/fine-collection-report', [ReportsController::class, 'fineCollectionReport'])->name('reports.fine_collection');
+    Route::get('/reports/category-statistics', [ReportsController::class, 'categoryStatistics'])->name('reports.category_statistics');
+    Route::get('/reports/export', [ReportsController::class, 'export'])->name('reports.export');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings', [SettingsController::class, 'update'])->name('settings');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+    // Fine Management routes
+    Route::get('/fines', [App\Http\Controllers\FineController::class, 'index'])->name('fines.index');
+    Route::get('/fines/pending/{studentId}', [App\Http\Controllers\FineController::class, 'pending'])->name('fines.pending');
+    Route::get('/fines/history', [App\Http\Controllers\FineController::class, 'history'])->name('fines.history');
+    Route::post('/fines/pay/{id}', [App\Http\Controllers\FineController::class, 'pay'])->name('fines.pay');
+    Route::post('/fines/waive/{id}', [App\Http\Controllers\FineController::class, 'waive'])->name('fines.waive');
+    Route::post('/fines/calculate-overdue', [App\Http\Controllers\FineController::class, 'calculateOverdueFines'])->name('fines.calculate_overdue');
+
+    // Book Reservation routes
+    Route::get('/reservations', [App\Http\Controllers\BookReservationController::class, 'index'])->name('reservations.index');
+    Route::post('/reservations/reserve', [App\Http\Controllers\BookReservationController::class, 'reserve'])->name('reservations.reserve');
+    Route::post('/reservations/cancel/{id}', [App\Http\Controllers\BookReservationController::class, 'cancel'])->name('reservations.cancel');
+    Route::post('/reservations/notify/{bookId}', [App\Http\Controllers\BookReservationController::class, 'notifyAvailable'])->name('reservations.notify');
+    Route::post('/reservations/mark-issued/{id}', [App\Http\Controllers\BookReservationController::class, 'markAsIssued'])->name('reservations.mark_issued');
 });

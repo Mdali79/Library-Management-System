@@ -31,11 +31,34 @@ class book_issue extends Model
         return $this->belongsTo(book::class, 'book_id', 'id');
     }
 
+    public function fine()
+    {
+        return $this->hasOne(Fine::class);
+    }
+
+    protected $fillable = [
+        'student_id',
+        'book_id',
+        'issue_date',
+        'return_date',
+        'issue_status',
+        'return_day',
+        'fine_amount',
+        'book_condition',
+        'damage_notes',
+        'issue_receipt_number',
+        'return_receipt_number',
+        'is_overdue',
+        'fine_notified',
+    ];
 
     protected $casts = [
         'issue_date' => 'datetime:Y-m-d',
         'return_date' => 'datetime:Y-m-d',
         'return_day' => 'datetime:Y-m-d',
+        'is_overdue' => 'boolean',
+        'fine_notified' => 'boolean',
+        'fine_amount' => 'decimal:2',
     ];
 
 }

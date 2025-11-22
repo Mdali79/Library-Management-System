@@ -14,8 +14,26 @@ class CategorySeeder extends Seeder
      */
     public function run()
     {
-        if (category::count() == 0) {
-            category::factory(10)->create();
+        $categories = [
+            'Programming Languages',
+            'Data Structures & Algorithms',
+            'Database Systems',
+            'Software Engineering',
+            'Computer Networks',
+            'Operating Systems',
+            'Web Development',
+            'Mobile Development',
+            'Artificial Intelligence',
+            'Machine Learning',
+            'Cybersecurity',
+            'Cloud Computing',
+            'Computer Architecture',
+            'Software Testing',
+            'Project Management',
+        ];
+
+        foreach ($categories as $categoryName) {
+            category::firstOrCreate(['name' => $categoryName]);
         }
     }
 }

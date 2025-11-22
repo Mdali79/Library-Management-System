@@ -11,6 +11,22 @@ class book extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    
+    protected $fillable = [
+        'name',
+        'category_id',
+        'auther_id',
+        'publisher_id',
+        'status',
+        'isbn',
+        'edition',
+        'publication_year',
+        'description',
+        'cover_image',
+        'total_quantity',
+        'available_quantity',
+        'issued_quantity',
+    ];
 
     /**
      * Get the auther that owns the book
@@ -42,6 +58,13 @@ class book extends Model
         return $this->belongsTo(publisher::class);
     }
 
+    public function issues()
+    {
+        return $this->hasMany(book_issue::class);
+    }
 
-
+    public function reservations()
+    {
+        return $this->hasMany(BookReservation::class);
+    }
 }

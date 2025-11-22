@@ -15,8 +15,12 @@ class CreateSettingsTable extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('return_days');
-            $table->string('fine');
+            $table->integer('return_days')->default(14);
+            $table->decimal('fine_per_day', 10, 2)->default(0);
+            $table->integer('fine_grace_period_days')->default(14);
+            $table->integer('max_borrowing_limit_student')->default(5);
+            $table->integer('max_borrowing_limit_teacher')->default(10);
+            $table->integer('max_borrowing_limit_librarian')->default(15);
             $table->timestamps();
         });
     }

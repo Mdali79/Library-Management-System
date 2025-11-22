@@ -24,10 +24,16 @@ class StorebookRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required',
-            'category_id' => 'required',
-            'auther_id' => 'required',
-            'publisher_id' => 'required',
+            'name' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
+            'auther_id' => 'required|exists:authers,id',
+            'publisher_id' => 'required|exists:publishers,id',
+            'isbn' => 'nullable|string|unique:books,isbn',
+            'edition' => 'nullable|string|max:50',
+            'publication_year' => 'nullable|integer|min:1000|max:' . (date('Y') + 1),
+            'description' => 'nullable|string',
+            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'total_quantity' => 'nullable|integer|min:1',
         ];
     }
 }

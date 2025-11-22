@@ -19,7 +19,17 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
+        'email',
+        'contact',
+        'role',
+        'department',
+        'batch',
+        'roll',
+        'reg_no',
         'password',
+        'is_verified',
+        'verification_code',
     ];
 
     /**
@@ -29,6 +39,26 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'is_verified' => 'boolean',
+    ];
+
+    public function student()
+    {
+        return $this->hasOne(student::class);
+    }
+
+    public function fines()
+    {
+        return $this->hasMany(Fine::class);
+    }
+
+    public function reservations()
+    {
+        return $this->hasMany(BookReservation::class);
+    }
 }
