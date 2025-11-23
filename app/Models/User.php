@@ -30,6 +30,10 @@ class User extends Authenticatable
         'password',
         'is_verified',
         'verification_code',
+        'registration_status',
+        'approved_by',
+        'approved_at',
+        'rejection_reason',
     ];
 
     /**
@@ -60,5 +64,13 @@ class User extends Authenticatable
     public function reservations()
     {
         return $this->hasMany(BookReservation::class);
+    }
+
+    /**
+     * Get the user who approved this registration
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'id');
     }
 }

@@ -26,7 +26,7 @@
                             <i class="fas fa-plus"></i> Request Book
                         </a>
                     @endif
-                    @if(auth()->user()->role == 'Librarian')
+                    @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
                         <a class="add-new" href="{{ route('book_issue.pending') }}" style="margin-left: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
                             <i class="fas fa-clock"></i> Pending Requests
                         </a>
@@ -137,7 +137,9 @@
                             @endforelse
                         </tbody>
                     </table>
-                    {{ $books->links('vendor/pagination/bootstrap-4') }}
+                    @if($books instanceof \Illuminate\Pagination\LengthAwarePaginator && $books->hasPages())
+                        {{ $books->links('vendor/pagination/bootstrap-4') }}
+                    @endif
                 </div>
             </div>
         </div>

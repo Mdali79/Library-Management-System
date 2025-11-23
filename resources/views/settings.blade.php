@@ -52,7 +52,10 @@
                                     <input type="number" class="form-control" name="fine_grace_period_days" 
                                         value="{{ old('fine_grace_period_days', $data->fine_grace_period_days ?? 14) }}" 
                                         min="0" max="30" required>
-                                    <small class="form-text text-muted">Days after return date before fine starts</small>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> <strong>Fine calculation starts AFTER this many days past the return date.</strong><br>
+                                        Example: If grace period is 14 days and return date is Jan 1, fine calculation starts on Jan 15 (14 days later).
+                                    </small>
                                     @error('fine_grace_period_days')
                                         <div class="alert alert-danger" role="alert">
                                             {{ $message }}

@@ -124,10 +124,14 @@ class dashboardController extends Controller
                 ->count();
         }
 
-        // Librarian specific - pending book requests
-        if ($role == 'Librarian') {
+        // Librarian/Admin specific - pending book requests
+        if (in_array($role, ['Librarian', 'Admin'])) {
             $data['pending_book_requests'] = book_issue::where('request_status', 'pending')
                 ->with(['book', 'student.user'])
+                ->count();
+            
+            // Pending user registrations
+            $data['pending_registrations'] = \App\Models\User::where('registration_status', 'pending')
                 ->count();
         }
 

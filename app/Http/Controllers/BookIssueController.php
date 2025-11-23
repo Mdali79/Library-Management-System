@@ -37,7 +37,8 @@ class BookIssueController extends Controller
                     ->latest()
                     ->paginate(10);
             } else {
-                $books = collect();
+                // Return empty paginated collection
+                $books = book_issue::where('id', 0)->paginate(10);
             }
         } else {
             // Admin and Librarian see all issues
@@ -99,10 +100,10 @@ class BookIssueController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \App\Http\Requests\Storebook_issueRequest  $request
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Storebook_issueRequest $request)
+    public function store(Request $request)
     {
         $user = Auth::user();
         $role = $user->role;
@@ -113,12 +114,19 @@ class BookIssueController extends Controller
             return $this->studentRequest($request);
         }
 
+        // For Admin/Librarian, validate with FormRequest
+        $validated = $request->validate([
+            'student_id' => 'required|exists:students,id',
+            'book_id' => 'required|exists:books,id',
+            'issue_date' => 'nullable|date',
+        ]);
+
         // Admin/Librarian direct issue (existing functionality)
-        $student = student::find($request->student_id);
-        $book = book::find($request->book_id);
+        $student = student::find($validated['student_id']);
+        $book = book::find($validated['book_id']);
 
         // Check borrowing limit
-        $currentIssues = book_issue::where('student_id', $request->student_id)
+        $currentIssues = book_issue::where('student_id', $validated['student_id'])
             ->where('issue_status', 'N')
             ->where('request_status', '!=', 'rejected')
             ->count();
@@ -137,14 +145,14 @@ class BookIssueController extends Controller
             return redirect()->back()->withErrors(['error' => 'Book is not available.']);
         }
 
-        $issue_date = $request->issue_date ?? Carbon::now();
+        $issue_date = $validated['issue_date'] ?? Carbon::now();
         $return_date = Carbon::parse($issue_date)->addDays($settings->return_days);
         
         $receiptNumber = 'ISSUE-' . strtoupper(Str::random(8));
 
         $bookIssue = book_issue::create([
-            'student_id' => $request->student_id,
-            'book_id' => $request->book_id,
+            'student_id' => $validated['student_id'],
+            'book_id' => $validated['book_id'],
             'issue_date' => $issue_date,
             'return_date' => $return_date,
             'issue_status' => 'N',
@@ -226,14 +234,14 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Show pending requests for Librarian approval
+     * Show pending requests for Librarian/Admin approval
      */
     public function pendingRequests()
     {
         $user = Auth::user();
         
-        if ($user->role != 'Librarian') {
-            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Librarians can approve requests.']);
+        if (!in_array($user->role, ['Librarian', 'Admin'])) {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Librarians and Admins can approve requests.']);
         }
 
         $pendingRequests = book_issue::where('request_status', 'pending')
@@ -247,14 +255,14 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Approve book request (Librarian only)
+     * Approve book request (Librarian/Admin)
      */
     public function approveRequest(Request $request, $id)
     {
         $user = Auth::user();
         
-        if ($user->role != 'Librarian') {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians can approve requests.']);
+        if (!in_array($user->role, ['Librarian', 'Admin'])) {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians and Admins can approve requests.']);
         }
 
         $bookIssue = book_issue::with(['book', 'student'])->findOrFail($id);
@@ -306,14 +314,14 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Reject book request (Librarian only)
+     * Reject book request (Librarian/Admin)
      */
     public function rejectRequest(Request $request, $id)
     {
         $user = Auth::user();
         
-        if ($user->role != 'Librarian') {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians can reject requests.']);
+        if (!in_array($user->role, ['Librarian', 'Admin'])) {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians and Admins can reject requests.']);
         }
 
         $request->validate([

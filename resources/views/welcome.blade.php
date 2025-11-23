@@ -26,12 +26,16 @@
                         <button type="submit" name="login" class="btn btn-danger btn-lg btn-block">
                             <i class="fas fa-sign-in-alt"></i> Login
                         </button>
-                        <div class="mt-4 text-center">
-                            <p class="text-white">Don't have an account? 
-                                <a href="{{ route('register') }}" style="color: #fff; font-weight: 600; text-decoration: underline;">
-                                    Register Here
-                                </a>
-                            </p>
+                        <div class="mt-3 text-center">
+                            <p class="text-white mb-3" style="font-size: 0.9rem;">Don't have an account?</p>
+                            <a href="{{ route('register') }}" class="btn btn-success btn-lg btn-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                                <i class="fas fa-user-plus"></i> Create New Account
+                            </a>
+                        </div>
+                        <div class="mt-3 text-center">
+                            <small class="text-white" style="opacity: 0.8;">
+                                Register as Student, Teacher, Librarian, or Admin
+                            </small>
                         </div>
                     </form>
                     @error('username')

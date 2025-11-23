@@ -38,7 +38,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Category</label>
-                                            <select name="category" class="form-control">
+                                            <select name="category" class="form-control search-select">
                                                 <option value="">All Categories</option>
                                                 @foreach($categories as $cat)
                                                     <option value="{{ $cat->id }}" 
@@ -52,7 +52,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Author</label>
-                                            <select name="author" class="form-control">
+                                            <select name="author" class="form-control search-select">
                                                 <option value="">All Authors</option>
                                                 @foreach($authors as $auth)
                                                     <option value="{{ $auth->id }}" 
@@ -66,7 +66,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Publisher</label>
-                                            <select name="publisher" class="form-control">
+                                            <select name="publisher" class="form-control search-select">
                                                 <option value="">All Publishers</option>
                                                 @foreach($publishers as $pub)
                                                     <option value="{{ $pub->id }}" 
@@ -80,8 +80,8 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Status</label>
-                                            <select name="status" class="form-control">
-                                                <option value="">All</option>
+                                            <select name="status" class="form-control search-select">
+                                                <option value="">All Status</option>
                                                 <option value="available" {{ ($filters['status'] ?? '') == 'available' ? 'selected' : '' }}>Available</option>
                                                 <option value="unavailable" {{ ($filters['status'] ?? '') == 'unavailable' ? 'selected' : '' }}>Unavailable</option>
                                             </select>

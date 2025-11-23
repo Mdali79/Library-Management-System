@@ -16,7 +16,29 @@ class LoginController extends Controller
             'password' => "required",
         ]);
 
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password])) {
+        $credentials = [
+            'username' => $request->username,
+            'password' => $request->password,
+        ];
+
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            
+            // Check if registration is approved
+            if ($user->registration_status == 'pending') {
+                Auth::logout();
+                return redirect()->back()->withErrors([
+                    'username' => 'Your account is pending approval. Please wait for an Administrator or Librarian to approve your registration.'
+                ]);
+            }
+            
+            if ($user->registration_status == 'rejected') {
+                Auth::logout();
+                return redirect()->back()->withErrors([
+                    'username' => 'Your registration has been rejected. Please contact the administrator for more information.'
+                ]);
+            }
+
             return redirect('/dashboard');
         } else {
             return redirect()->back()->withErrors(['username' => 'Invalid username or password']);

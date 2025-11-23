@@ -391,6 +391,22 @@ ul {
     transition: all 0.3s ease;
     background: var(--bg-secondary);
     color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-group select.form-control {
+    overflow: visible;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .form-group .form-control:focus {
@@ -401,6 +417,57 @@ ul {
 
 .form-group .form-control::placeholder {
     color: var(--text-light);
+}
+
+/* Select dropdown improvements */
+select.form-control option {
+    padding: 0.5rem;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+select.form-control {
+    min-width: 100%;
+    max-width: 100%;
+    overflow: visible !important;
+}
+
+/* Ensure select dropdown text is fully visible */
+select.form-control option {
+    padding: 0.5rem;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: visible;
+}
+
+/* Fix for select dropdown display */
+select.form-control {
+    text-overflow: clip;
+    overflow: visible;
+}
+
+/* Make sure dropdown shows full text when selected */
+.form-group select.form-control:focus {
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Specific styling for search form selects */
+.search-select {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap;
+    padding-right: 2.5rem;
+}
+
+.search-select option {
+    padding: 0.75rem 1rem;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: visible;
 }
 
 .form-text {

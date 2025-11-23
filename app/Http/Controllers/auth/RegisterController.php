@@ -25,18 +25,31 @@ class RegisterController extends Controller
      */
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Conditional validation based on role
+        $rules = [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|email|unique:users',
             'contact' => 'nullable|string|max:20',
             'role' => 'required|in:Student,Teacher,Librarian,Admin',
-            'department' => 'nullable|string|max:255',
-            'batch' => 'nullable|string|max:50',
-            'roll' => 'nullable|string|max:50',
-            'reg_no' => 'nullable|string|unique:users',
             'password' => 'required|string|min:8|confirmed',
-        ]);
+        ];
+
+        // Student/Teacher require student-specific fields
+        if (in_array($request->role, ['Student', 'Teacher'])) {
+            $rules['department'] = 'required|string|max:255';
+            $rules['batch'] = 'required|string|max:50';
+            $rules['roll'] = 'required|string|max:50';
+            $rules['reg_no'] = 'required|string|unique:users';
+        } else {
+            // Admin/Librarian - these fields are optional
+            $rules['department'] = 'nullable|string|max:255';
+            $rules['batch'] = 'nullable|string|max:50';
+            $rules['roll'] = 'nullable|string|max:50';
+            $rules['reg_no'] = 'nullable|string|unique:users';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -47,24 +60,45 @@ class RegisterController extends Controller
         // Generate verification code
         $verificationCode = Str::random(6);
 
+        // Determine registration status based on role
+        // Student/Teacher: Auto-approved
+        // Admin/Librarian: Requires approval
+        $registrationStatus = in_array($request->role, ['Student', 'Teacher']) ? 'approved' : 'pending';
+        $isVerified = in_array($request->role, ['Student', 'Teacher']) ? true : false;
+
         // Create user
-        $user = User::create([
+        // For Admin/Librarian, only save department if provided, other fields should be null
+        $userData = [
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'contact' => $request->contact,
             'role' => $request->role,
-            'department' => $request->department,
-            'batch' => $request->batch,
-            'roll' => $request->roll,
-            'reg_no' => $request->reg_no,
             'password' => Hash::make($request->password),
             'verification_code' => $verificationCode,
-            'is_verified' => false, // Set to true if email/SMS verification is implemented
-        ]);
+            'is_verified' => $isVerified,
+            'registration_status' => $registrationStatus,
+        ];
 
-        // Create student record if role is Student, Teacher, or Librarian
-        if (in_array($request->role, ['Student', 'Teacher', 'Librarian'])) {
+        // Add role-specific fields
+        if (in_array($request->role, ['Student', 'Teacher'])) {
+            // Student/Teacher - all fields required
+            $userData['department'] = $request->department;
+            $userData['batch'] = $request->batch;
+            $userData['roll'] = $request->roll;
+            $userData['reg_no'] = $request->reg_no;
+        } else {
+            // Admin/Librarian - only department is optional, others should be null
+            $userData['department'] = $request->department ?: null;
+            $userData['batch'] = null;
+            $userData['roll'] = null;
+            $userData['reg_no'] = null;
+        }
+
+        $user = User::create($userData);
+
+        // Create student record if role is Student, Teacher, or Librarian (only if approved)
+        if (in_array($request->role, ['Student', 'Teacher', 'Librarian']) && $registrationStatus == 'approved') {
             student::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -76,6 +110,10 @@ class RegisterController extends Controller
                 'reg_no' => $request->reg_no,
                 'user_id' => $user->id,
                 'borrowing_limit' => $request->role == 'Teacher' ? 10 : ($request->role == 'Librarian' ? 15 : 5),
+                'class' => $request->department ?? 'General',
+                'age' => 'N/A',
+                'gender' => 'N/A',
+                'address' => $request->department ?? 'N/A',
             ]);
         }
 
@@ -83,7 +121,12 @@ class RegisterController extends Controller
         // Mail::to($user->email)->send(new VerificationEmail($verificationCode));
         // Or send SMS with OTP
 
-        return redirect()->route('login')->with('success', 'Registration successful! Please verify your email/contact to activate your account.');
+        // Different messages based on registration status
+        if ($registrationStatus == 'pending') {
+            return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator or Librarian. You will be notified once approved.');
+        } else {
+            return redirect()->route('login')->with('success', 'Registration successful! You can now login with your credentials.');
+        }
     }
 
     /**

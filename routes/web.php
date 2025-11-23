@@ -118,6 +118,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
+    // User Registration Approval routes (Admin/Librarian only)
+    Route::get('/registrations/pending', [App\Http\Controllers\UserRegistrationController::class, 'index'])->name('registrations.pending');
+    Route::post('/registrations/approve/{id}', [App\Http\Controllers\UserRegistrationController::class, 'approve'])->name('registrations.approve');
+    Route::post('/registrations/reject/{id}', [App\Http\Controllers\UserRegistrationController::class, 'reject'])->name('registrations.reject');
+
     // Fine Management routes
     Route::get('/fines', [App\Http\Controllers\FineController::class, 'index'])->name('fines.index');
     Route::get('/fines/pending/{studentId}', [App\Http\Controllers\FineController::class, 'pending'])->name('fines.pending');

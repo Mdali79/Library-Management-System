@@ -104,6 +104,9 @@ class FineController extends Controller
      */
     public function pay(Request $request, $id)
     {
+        $user = auth()->user();
+        $role = $user->role;
+        
         $request->validate([
             'payment_method' => 'required|in:cash,online',
             'amount' => 'required|numeric|min:0',
@@ -115,10 +118,18 @@ class FineController extends Controller
             return redirect()->back()->withErrors(['error' => 'Fine already paid.']);
         }
 
+        // Students/Teachers can only pay their own fines
+        if (in_array($role, ['Student', 'Teacher'])) {
+            $student = \App\Models\student::where('user_id', $user->id)->first();
+            if (!$student || $fine->student_id != $student->id) {
+                return redirect()->back()->withErrors(['error' => 'You can only pay your own fines.']);
+            }
+        }
+
         $fine->status = 'paid';
         $fine->payment_method = $request->payment_method;
         $fine->paid_at = Carbon::now();
-        $fine->notes = $request->notes ?? $fine->notes;
+        $fine->notes = ($fine->notes ?? '') . ' | Paid by ' . ($role == 'Student' || $role == 'Teacher' ? 'student' : $role);
         $fine->save();
 
         return redirect()->back()->with('success', 'Fine paid successfully.');
@@ -129,6 +140,14 @@ class FineController extends Controller
      */
     public function calculateOverdueFines()
     {
+        $user = auth()->user();
+        $role = $user->role;
+
+        // Only Admin and Librarian can calculate overdue fines
+        if (!in_array($role, ['Admin', 'Librarian'])) {
+            return redirect()->back()->withErrors(['error' => 'You do not have permission to calculate overdue fines.']);
+        }
+
         $settings = settings::latest()->first();
         $overdueIssues = book_issue::where('issue_status', 'N')
             ->where('return_date', '<', Carbon::now())
@@ -174,9 +193,22 @@ class FineController extends Controller
      */
     public function waive($id)
     {
+        $user = auth()->user();
+        $role = $user->role;
+
+        // Only Admin and Librarian can waive fines
+        if (!in_array($role, ['Admin', 'Librarian'])) {
+            return redirect()->back()->withErrors(['error' => 'You do not have permission to waive fines.']);
+        }
+
         $fine = Fine::findOrFail($id);
+        
+        if ($fine->status == 'waived') {
+            return redirect()->back()->withErrors(['error' => 'Fine already waived.']);
+        }
+
         $fine->status = 'waived';
-        $fine->notes = ($fine->notes ?? '') . ' | Waived by admin';
+        $fine->notes = ($fine->notes ?? '') . ' | Waived by ' . $role . ' (' . $user->name . ') on ' . Carbon::now()->format('Y-m-d H:i:s');
         $fine->save();
 
         return redirect()->back()->with('success', 'Fine waived successfully.');

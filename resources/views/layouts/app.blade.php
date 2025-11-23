@@ -65,9 +65,7 @@
                         @endif
                         @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
                             <li><a href="{{ route('book_issued') }}"><i class="fas fa-hand-holding"></i> Book Issue</a></li>
-                            @if(auth()->user()->role == 'Librarian')
-                                <li><a href="{{ route('book_issue.pending') }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
-                            @endif
+                            <li><a href="{{ route('book_issue.pending') }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
                             <li><a href="{{ route('reservations.index') }}"><i class="fas fa-calendar-check"></i> Reservations</a></li>
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> Fines</a></li>
                         @endif
@@ -75,6 +73,9 @@
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
                         @endif
                         <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                        @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
+                            <li><a href="{{ route('registrations.pending') }}"><i class="fas fa-user-clock"></i> Pending Registrations</a></li>
+                        @endif
                         @if(auth()->user()->role == 'Admin')
                             <li><a href="{{ route('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
                         @endif

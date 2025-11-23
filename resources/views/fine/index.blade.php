@@ -7,15 +7,29 @@
                     <h2 class="admin-heading">Fine Management</h2>
                 </div>
                 <div class="offset-md-6 col-md-3">
-                    <form action="{{ route('fines.calculate_overdue') }}" method="POST" style="display: inline;">
-                        @csrf
-                        <button type="submit" class="btn btn-warning">Calculate Overdue Fines</button>
-                    </form>
+                    @if(in_array($role, ['Admin', 'Librarian']))
+                        <form action="{{ route('fines.calculate_overdue') }}" method="POST" style="display: inline;">
+                            @csrf
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Calculate fines for all overdue books?')">
+                                <i class="fas fa-calculator"></i> Calculate Overdue Fines
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
 
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             @endif
 
             <!-- Statistics Cards -->
@@ -59,10 +73,12 @@
                                     <option value="waived" {{ request('status') == 'waived' ? 'selected' : '' }}>Waived</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <input type="text" name="student_id" class="form-control" 
-                                    placeholder="Student ID" value="{{ request('student_id') }}">
-                            </div>
+                            @if(in_array($role, ['Admin', 'Librarian']))
+                                <div class="col-md-3">
+                                    <input type="text" name="student_id" class="form-control" 
+                                        placeholder="Student ID" value="{{ request('student_id') }}">
+                                </div>
+                            @endif
                             <div class="col-md-2">
                                 <button type="submit" class="btn btn-primary">Filter</button>
                             </div>
@@ -107,13 +123,29 @@
                                     <td>{{ $fine->paid_at ? \Carbon\Carbon::parse($fine->paid_at)->format('d M Y') : 'N/A' }}</td>
                                     <td>
                                         @if($fine->status == 'pending')
-                                            <button type="button" class="btn btn-sm btn-primary" 
-                                                data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
-                                            <form action="{{ route('fines.waive', $fine->id) }}" method="POST" style="display: inline;">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-secondary" 
-                                                    onclick="return confirm('Are you sure you want to waive this fine?')">Waive</button>
-                                            </form>
+                                            @if(in_array($role, ['Student', 'Teacher']))
+                                                @php
+                                                    $student = \App\Models\student::where('user_id', auth()->id())->first();
+                                                    $canPay = $student && $fine->student_id == $student->id;
+                                                @endphp
+                                                @if($canPay)
+                                                    <button type="button" class="btn btn-sm btn-primary" 
+                                                        data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
+                                                @else
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            @else
+                                                {{-- Admin/Librarian can pay any fine --}}
+                                                <button type="button" class="btn btn-sm btn-primary" 
+                                                    data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
+                                                <form action="{{ route('fines.waive', $fine->id) }}" method="POST" style="display: inline;">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-secondary" 
+                                                        onclick="return confirm('Are you sure you want to waive this fine?')">
+                                                        <i class="fas fa-hand-holding-heart"></i> Waive
+                                                    </button>
+                                                </form>
+                                            @endif
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
