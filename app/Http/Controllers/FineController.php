@@ -15,21 +15,47 @@ class FineController extends Controller
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $role = $user->role;
+
         $query = Fine::with(['bookIssue.book', 'student', 'user']);
+
+        // Students/Teachers see only their own fines
+        if (in_array($role, ['Student', 'Teacher'])) {
+            $student = \App\Models\student::where('user_id', $user->id)->first();
+            if ($student) {
+                $query->where('student_id', $student->id);
+            } else {
+                $query->where('id', 0); // No results if no student record
+            }
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('student_id')) {
+        if ($request->filled('student_id') && in_array($role, ['Admin', 'Librarian'])) {
             $query->where('student_id', $request->student_id);
+        }
+
+        // Calculate statistics based on role
+        if (in_array($role, ['Student', 'Teacher'])) {
+            $student = \App\Models\student::where('user_id', $user->id)->first();
+            $pendingFines = $student ? Fine::where('student_id', $student->id)->where('status', 'pending')->sum('amount') : 0;
+            $totalFines = $student ? Fine::where('student_id', $student->id)->sum('amount') : 0;
+            $paidFines = $student ? Fine::where('student_id', $student->id)->where('status', 'paid')->sum('amount') : 0;
+        } else {
+            $pendingFines = Fine::where('status', 'pending')->sum('amount');
+            $totalFines = Fine::sum('amount');
+            $paidFines = Fine::where('status', 'paid')->sum('amount');
         }
 
         return view('fine.index', [
             'fines' => $query->latest()->paginate(15),
-            'pendingFines' => Fine::where('status', 'pending')->sum('amount'),
-            'totalFines' => Fine::sum('amount'),
-            'paidFines' => Fine::where('status', 'paid')->sum('amount'),
+            'pendingFines' => $pendingFines,
+            'totalFines' => $totalFines,
+            'paidFines' => $paidFines,
+            'role' => $role,
         ]);
     }
 

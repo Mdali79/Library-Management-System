@@ -10,8 +10,10 @@ use App\Models\book;
 use App\Models\settings;
 use App\Models\student;
 use App\Models\Fine;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class BookIssueController extends Controller
@@ -23,8 +25,30 @@ class BookIssueController extends Controller
      */
     public function index()
     {
+        $user = Auth::user();
+        $role = $user->role;
+
+        // Students see only their own issues
+        if ($role == 'Student' || $role == 'Teacher') {
+            $studentRecord = student::where('user_id', $user->id)->first();
+            if ($studentRecord) {
+                $books = book_issue::where('student_id', $studentRecord->id)
+                    ->with(['book', 'student'])
+                    ->latest()
+                    ->paginate(10);
+            } else {
+                $books = collect();
+            }
+        } else {
+            // Admin and Librarian see all issues
+            $books = book_issue::with(['book', 'student', 'approver'])
+                ->latest()
+                ->paginate(10);
+        }
+
         return view('book.issueBooks', [
-            'books' => book_issue::Paginate(5)
+            'books' => $books,
+            'role' => $role
         ]);
     }
 
@@ -35,6 +59,15 @@ class BookIssueController extends Controller
      */
     public function create()
     {
+        $user = Auth::user();
+        $role = $user->role;
+
+        // If student/teacher, show self-service form
+        if (in_array($role, ['Student', 'Teacher'])) {
+            return $this->studentRequestForm();
+        }
+
+        // Admin/Librarian can issue to any member
         return view('book.issueBook_add', [
             'students' => student::with('user')->latest()->get(),
             'books' => book::where(function($query) {
@@ -46,6 +79,24 @@ class BookIssueController extends Controller
     }
 
     /**
+     * Student self-service request form
+     */
+    private function studentRequestForm()
+    {
+        $user = Auth::user();
+        $student = student::where('user_id', $user->id)->first();
+        
+        if (!$student) {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Student profile not found. Please contact administrator.']);
+        }
+
+        return view('book.student_request', [
+            'student' => $student,
+            'books' => book::with(['auther', 'category', 'publisher'])->get(),
+        ]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \App\Http\Requests\Storebook_issueRequest  $request
@@ -53,13 +104,23 @@ class BookIssueController extends Controller
      */
     public function store(Storebook_issueRequest $request)
     {
+        $user = Auth::user();
+        $role = $user->role;
         $settings = settings::latest()->first();
+
+        // If student/teacher making request
+        if (in_array($role, ['Student', 'Teacher'])) {
+            return $this->studentRequest($request);
+        }
+
+        // Admin/Librarian direct issue (existing functionality)
         $student = student::find($request->student_id);
         $book = book::find($request->book_id);
 
         // Check borrowing limit
         $currentIssues = book_issue::where('student_id', $request->student_id)
             ->where('issue_status', 'N')
+            ->where('request_status', '!=', 'rejected')
             ->count();
         
         $borrowingLimit = $student->borrowing_limit ?? 
@@ -87,6 +148,9 @@ class BookIssueController extends Controller
             'issue_date' => $issue_date,
             'return_date' => $return_date,
             'issue_status' => 'N',
+            'request_status' => 'issued', // Direct issue by admin/librarian
+            'approved_by' => $user->id,
+            'approved_at' => Carbon::now(),
             'issue_receipt_number' => $receiptNumber,
             'is_overdue' => false,
             'fine_notified' => false,
@@ -99,6 +163,174 @@ class BookIssueController extends Controller
         $book->save();
 
         return redirect()->route('book_issued')->with('success', 'Book issued successfully. Receipt: ' . $receiptNumber);
+    }
+
+    /**
+     * Student/Teacher book request
+     */
+    private function studentRequest(Request $request)
+    {
+        $user = Auth::user();
+        $student = student::where('user_id', $user->id)->first();
+        
+        if (!$student) {
+            return redirect()->back()->withErrors(['error' => 'Student profile not found.']);
+        }
+
+        $request->validate([
+            'book_id' => 'required|exists:books,id',
+        ]);
+
+        $settings = settings::latest()->first();
+        $book = book::find($request->book_id);
+
+        // Check borrowing limit (including pending requests)
+        $currentIssues = book_issue::where('student_id', $student->id)
+            ->where('issue_status', 'N')
+            ->whereIn('request_status', ['pending', 'approved', 'issued'])
+            ->count();
+        
+        $borrowingLimit = $student->borrowing_limit ?? 
+            ($student->role == 'Teacher' ? $settings->max_borrowing_limit_teacher : 
+             $settings->max_borrowing_limit_student);
+
+        if ($currentIssues >= $borrowingLimit) {
+            return redirect()->back()->withErrors(['error' => 'Borrowing limit reached. Maximum ' . $borrowingLimit . ' books allowed.']);
+        }
+
+        // Check if already requested
+        $existingRequest = book_issue::where('student_id', $student->id)
+            ->where('book_id', $request->book_id)
+            ->whereIn('request_status', ['pending', 'approved'])
+            ->first();
+
+        if ($existingRequest) {
+            return redirect()->back()->withErrors(['error' => 'You already have a pending or approved request for this book.']);
+        }
+
+        $issue_date = Carbon::now();
+        $return_date = Carbon::parse($issue_date)->addDays($settings->return_days);
+
+        $bookIssue = book_issue::create([
+            'student_id' => $student->id,
+            'book_id' => $request->book_id,
+            'issue_date' => $issue_date,
+            'return_date' => $return_date,
+            'issue_status' => 'N',
+            'request_status' => 'pending', // Pending approval
+            'is_overdue' => false,
+            'fine_notified' => false,
+        ]);
+
+        return redirect()->route('book_issued')->with('success', 'Book request submitted successfully. Waiting for librarian approval.');
+    }
+
+    /**
+     * Show pending requests for Librarian approval
+     */
+    public function pendingRequests()
+    {
+        $user = Auth::user();
+        
+        if ($user->role != 'Librarian') {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Librarians can approve requests.']);
+        }
+
+        $pendingRequests = book_issue::where('request_status', 'pending')
+            ->with(['book', 'student.user'])
+            ->latest()
+            ->paginate(15);
+
+        return view('book.pending_requests', [
+            'pendingRequests' => $pendingRequests,
+        ]);
+    }
+
+    /**
+     * Approve book request (Librarian only)
+     */
+    public function approveRequest(Request $request, $id)
+    {
+        $user = Auth::user();
+        
+        if ($user->role != 'Librarian') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians can approve requests.']);
+        }
+
+        $bookIssue = book_issue::with(['book', 'student'])->findOrFail($id);
+        
+        if ($bookIssue->request_status != 'pending') {
+            return redirect()->back()->withErrors(['error' => 'This request is not pending approval.']);
+        }
+
+        $settings = settings::latest()->first();
+        $book = $bookIssue->book;
+        $student = $bookIssue->student;
+
+        // Check availability
+        if ($book->available_quantity <= 0) {
+            return redirect()->back()->withErrors(['error' => 'Book is not available. Cannot approve request.']);
+        }
+
+        // Check borrowing limit
+        $currentIssues = book_issue::where('student_id', $student->id)
+            ->where('issue_status', 'N')
+            ->whereIn('request_status', ['approved', 'issued'])
+            ->count();
+        
+        $borrowingLimit = $student->borrowing_limit ?? 
+            ($student->role == 'Teacher' ? $settings->max_borrowing_limit_teacher : 
+             $settings->max_borrowing_limit_student);
+
+        if ($currentIssues >= $borrowingLimit) {
+            return redirect()->back()->withErrors(['error' => 'Student has reached borrowing limit. Cannot approve request.']);
+        }
+
+        // Approve and issue
+        $receiptNumber = 'ISSUE-' . strtoupper(Str::random(8));
+        
+        $bookIssue->request_status = 'issued';
+        $bookIssue->issue_status = 'N';
+        $bookIssue->approved_by = $user->id;
+        $bookIssue->approved_at = Carbon::now();
+        $bookIssue->issue_receipt_number = $receiptNumber;
+        $bookIssue->save();
+
+        // Update book quantities
+        $book->available_quantity = max(0, $book->available_quantity - 1);
+        $book->issued_quantity = $book->issued_quantity + 1;
+        $book->status = $book->available_quantity > 0 ? 'Y' : 'N';
+        $book->save();
+
+        return redirect()->route('book_issue.pending')->with('success', 'Book request approved and issued successfully. Receipt: ' . $receiptNumber);
+    }
+
+    /**
+     * Reject book request (Librarian only)
+     */
+    public function rejectRequest(Request $request, $id)
+    {
+        $user = Auth::user();
+        
+        if ($user->role != 'Librarian') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians can reject requests.']);
+        }
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $bookIssue = book_issue::findOrFail($id);
+        
+        if ($bookIssue->request_status != 'pending') {
+            return redirect()->back()->withErrors(['error' => 'This request is not pending approval.']);
+        }
+
+        $bookIssue->request_status = 'rejected';
+        $bookIssue->rejection_reason = $request->rejection_reason;
+        $bookIssue->save();
+
+        return redirect()->route('book_issue.pending')->with('success', 'Book request rejected successfully.');
     }
 
     /**
@@ -203,6 +435,20 @@ class BookIssueController extends Controller
      */
     public function destroy($id)
     {
+        $user = Auth::user();
+        $bookIssue = book_issue::findOrFail($id);
+        
+        // Students can only cancel their own pending requests
+        if (in_array($user->role, ['Student', 'Teacher'])) {
+            $student = student::where('user_id', $user->id)->first();
+            if ($bookIssue->student_id != $student->id || $bookIssue->request_status != 'pending') {
+                return redirect()->back()->withErrors(['error' => 'You can only cancel your own pending requests.']);
+            }
+            $bookIssue->delete();
+            return redirect()->route('book_issued')->with('success', 'Request cancelled successfully.');
+        }
+        
+        // Admin/Librarian can delete any
         book_issue::find($id)->delete();
         return redirect()->route('book_issued');
     }

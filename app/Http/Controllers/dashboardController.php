@@ -22,13 +22,34 @@ class dashboardController extends Controller
         $user = Auth::user();
         $role = $user->role ?? 'Admin';
 
-        // Common metrics
-        $totalBooks = book::count();
-        $totalMembers = student::count();
-        $issuedBooksCount = book_issue::where('issue_status', 'N')->count();
-        $returnedBooksCount = book_issue::where('issue_status', 'Y')->count();
-        $pendingFinesCount = Fine::where('status', 'pending')->count();
-        $pendingFinesAmount = Fine::where('status', 'pending')->sum('amount');
+        // Common metrics - filtered by role
+        if (in_array($role, ['Student', 'Teacher'])) {
+            $studentRecord = student::where('user_id', $user->id)->first();
+            $totalBooks = book::count(); // Students can see total books
+            $totalMembers = 0; // Students don't see member count
+            $issuedBooksCount = $studentRecord ? book_issue::where('student_id', $studentRecord->id)
+                ->where('issue_status', 'N')
+                ->where('request_status', 'issued')
+                ->count() : 0;
+            $returnedBooksCount = $studentRecord ? book_issue::where('student_id', $studentRecord->id)
+                ->where('issue_status', 'Y')
+                ->count() : 0;
+            $pendingFinesCount = $studentRecord ? Fine::where('student_id', $studentRecord->id)
+                ->where('status', 'pending')
+                ->count() : 0;
+            $pendingFinesAmount = $studentRecord ? Fine::where('student_id', $studentRecord->id)
+                ->where('status', 'pending')
+                ->sum('amount') : 0;
+        } else {
+            $totalBooks = book::count();
+            $totalMembers = student::count();
+            $issuedBooksCount = book_issue::where('issue_status', 'N')
+                ->where('request_status', 'issued')
+                ->count();
+            $returnedBooksCount = book_issue::where('issue_status', 'Y')->count();
+            $pendingFinesCount = Fine::where('status', 'pending')->count();
+            $pendingFinesAmount = Fine::where('status', 'pending')->sum('amount');
+        }
 
         // Monthly activity data for chart (last 12 months)
         $monthlyActivity = [];
@@ -66,6 +87,12 @@ class dashboardController extends Controller
             if ($studentRecord) {
                 $data['my_issued_books'] = book_issue::where('student_id', $studentRecord->id)
                     ->where('issue_status', 'N')
+                    ->where('request_status', 'issued')
+                    ->with('book')
+                    ->get();
+                
+                $data['my_pending_requests'] = book_issue::where('student_id', $studentRecord->id)
+                    ->where('request_status', 'pending')
                     ->with('book')
                     ->get();
                 
@@ -87,12 +114,20 @@ class dashboardController extends Controller
         // Admin/Librarian specific data
         if (in_array($role, ['Admin', 'Librarian'])) {
             $data['overdue_books'] = book_issue::where('issue_status', 'N')
+                ->where('request_status', 'issued')
                 ->where('return_date', '<', Carbon::now())
                 ->with(['book', 'student'])
                 ->get();
             
             $data['pending_reservations'] = BookReservation::where('status', 'pending')
                 ->with(['book', 'student'])
+                ->count();
+        }
+
+        // Librarian specific - pending book requests
+        if ($role == 'Librarian') {
+            $data['pending_book_requests'] = book_issue::where('request_status', 'pending')
+                ->with(['book', 'student.user'])
                 ->count();
         }
 

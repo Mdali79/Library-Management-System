@@ -94,6 +94,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/book-issue/update/{id}', [BookIssueController::class, 'update'])->name('book_issue.update');
     Route::post('/book-issue/delete/{id}', [BookIssueController::class, 'destroy'])->name('book_issue.destroy');
     Route::post('/book-issue/create', [BookIssueController::class, 'store'])->name('book_issue.store');
+    
+    // Pending requests and approval (Librarian only)
+    Route::get('/book-issue/pending', [BookIssueController::class, 'pendingRequests'])->name('book_issue.pending');
+    Route::post('/book-issue/approve/{id}', [BookIssueController::class, 'approveRequest'])->name('book_issue.approve');
+    Route::post('/book-issue/reject/{id}', [BookIssueController::class, 'rejectRequest'])->name('book_issue.reject');
 
     // Reports routes
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports');

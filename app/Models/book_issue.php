@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\User;
 
 class book_issue extends Model
 {
@@ -36,12 +37,24 @@ class book_issue extends Model
         return $this->hasOne(Fine::class);
     }
 
+    /**
+     * Get the user who approved the request
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'id');
+    }
+
     protected $fillable = [
         'student_id',
         'book_id',
         'issue_date',
         'return_date',
         'issue_status',
+        'request_status',
+        'approved_by',
+        'approved_at',
+        'rejection_reason',
         'return_day',
         'fine_amount',
         'book_condition',

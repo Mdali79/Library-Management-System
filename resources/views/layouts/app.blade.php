@@ -59,10 +59,20 @@
                             <li><a href="{{ route('students') }}"><i class="fas fa-users"></i> Members</a></li>
                         @endif
                         <li><a href="{{ route('books') }}"><i class="fas fa-book"></i> Books</a></li>
+                        @if(in_array(auth()->user()->role, ['Student', 'Teacher']))
+                            <li><a href="{{ route('book_issue.create') }}"><i class="fas fa-hand-holding"></i> Request Book</a></li>
+                            <li><a href="{{ route('book_issued') }}"><i class="fas fa-list"></i> My Requests</a></li>
+                        @endif
                         @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
                             <li><a href="{{ route('book_issued') }}"><i class="fas fa-hand-holding"></i> Book Issue</a></li>
+                            @if(auth()->user()->role == 'Librarian')
+                                <li><a href="{{ route('book_issue.pending') }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
+                            @endif
                             <li><a href="{{ route('reservations.index') }}"><i class="fas fa-calendar-check"></i> Reservations</a></li>
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> Fines</a></li>
+                        @endif
+                        @if(in_array(auth()->user()->role, ['Student', 'Teacher']))
+                            <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
                         @endif
                         <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                         @if(auth()->user()->role == 'Admin')

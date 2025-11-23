@@ -1,61 +1,138 @@
 @extends('layouts.app')
 @section('content')
+@php
+    use Illuminate\Support\Str;
+@endphp
     <div id="admin-content">
         <div class="container">
-            <div class="row">
-                <div class="col-md-3">
-                    <h2 class="admin-heading">All Book Issue</h2>
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h2 class="admin-heading">
+                        <i class="fas fa-list"></i> 
+                        @if(isset($role) && in_array($role, ['Student', 'Teacher']))
+                            My Book Requests
+                        @else
+                            All Book Issues
+                        @endif
+                    </h2>
                 </div>
-                <div class="offset-md-6 col-md-3">
-                    <a class="add-new" href="{{ route('book_issue.create') }}">Add Book Issue</a>
+                <div class="col-md-6 text-right">
+                    @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                        <a class="add-new" href="{{ route('book_issue.create') }}">
+                            <i class="fas fa-plus"></i> Issue Book
+                        </a>
+                    @else
+                        <a class="add-new" href="{{ route('book_issue.create') }}">
+                            <i class="fas fa-plus"></i> Request Book
+                        </a>
+                    @endif
+                    @if(auth()->user()->role == 'Librarian')
+                        <a class="add-new" href="{{ route('book_issue.pending') }}" style="margin-left: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-clock"></i> Pending Requests
+                        </a>
+                    @endif
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-12">
+                    @if(session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                    @endif
+                    @if(session('error'))
+                        <div class="alert alert-danger">{{ session('error') }}</div>
+                    @endif
                     <table class="content-table">
                         <thead>
                             <th>S.No</th>
-                            <th>Student Name</th>
+                            @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                                <th>Student Name</th>
+                            @endif
                             <th>Book Name</th>
-                            <th>Phone</th>
-                            <th>Email</th>
+                            @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                                <th>Phone</th>
+                                <th>Email</th>
+                            @endif
                             <th>Issue Date</th>
                             <th>Return Date</th>
-                            <th>Status</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
+                            <th>Request Status</th>
+                            <th>Issue Status</th>
+                            @if(isset($role) && in_array($role, ['Student', 'Teacher']))
+                                <th>Action</th>
+                            @else
+                                <th>Edit</th>
+                                <th>Delete</th>
+                            @endif
                         </thead>
                         <tbody>
                             @forelse ($books as $book)
-                                <tr style='@if (date('Y-m-d') > $book->return_date->format('d-m-Y') && $book->issue_status == 'N') ) background:rgba(255,0,0,0.2) @endif'>
+                                <tr style='@if (date('Y-m-d') > $book->return_date->format('Y-m-d') && $book->issue_status == 'N' && $book->request_status == 'issued') background:rgba(255,0,0,0.2) @endif'>
                                     <td>{{ $book->id }}</td>
-                                    <td>{{ $book->student->name }}</td>
+                                    @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                                        <td>{{ $book->student->name }}</td>
+                                    @endif
                                     <td>{{ $book->book->name }}</td>
-                                    <td>{{ $book->student->phone }}</td>
-                                    <td>{{ $book->student->email }}</td>
+                                    @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                                        <td>{{ $book->student->phone }}</td>
+                                        <td>{{ $book->student->email }}</td>
+                                    @endif
                                     <td>{{ $book->issue_date->format('d M, Y') }}</td>
                                     <td>{{ $book->return_date->format('d M, Y') }}</td>
+                                    <td>
+                                        @if($book->request_status == 'pending')
+                                            <span class='badge badge-warning'>Pending</span>
+                                        @elseif($book->request_status == 'approved')
+                                            <span class='badge badge-info'>Approved</span>
+                                        @elseif($book->request_status == 'rejected')
+                                            <span class='badge badge-danger'>Rejected</span>
+                                            @if($book->rejection_reason)
+                                                <br><small style="color: #dc2626;">{{ Str::limit($book->rejection_reason, 30) }}</small>
+                                            @endif
+                                        @elseif($book->request_status == 'issued')
+                                            <span class='badge badge-success'>Issued</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if ($book->issue_status == 'Y')
                                             <span class='badge badge-success'>Returned</span>
                                         @else
-                                            <span class='badge badge-danger'>Issued</span>
+                                            <span class='badge badge-danger'>Not Returned</span>
                                         @endif
                                     </td>
-                                    <td class="edit">
-                                        <a href="{{ route('book_issue.edit', $book->id) }}" class="btn btn-success">Edit</a>
-                                    </td>
-                                    <td class="delete">
-                                        <form action="{{ route('book_issue.destroy', $book) }}" method="post"
-                                            class="form-hidden">
-                                            <button class="btn btn-danger">Delete</button>
-                                            @csrf
-                                        </form>
-                                    </td>
+                                    @if(isset($role) && in_array($role, ['Student', 'Teacher']))
+                                        <td>
+                                            @if($book->request_status == 'pending')
+                                                <form action="{{ route('book_issue.destroy', $book->id) }}" method="post" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this request?')">
+                                                        <i class="fas fa-times"></i> Cancel
+                                                    </button>
+                                                </form>
+                                            @elseif($book->request_status == 'issued' && $book->issue_status == 'N')
+                                                <a href="{{ route('book_issue.edit', $book->id) }}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-undo"></i> Return
+                                                </a>
+                                            @endif
+                                        </td>
+                                    @else
+                                        <td class="edit">
+                                            @if($book->request_status == 'issued')
+                                                <a href="{{ route('book_issue.edit', $book->id) }}" class="btn btn-success">Edit</a>
+                                            @endif
+                                        </td>
+                                        <td class="delete">
+                                            @if($book->request_status == 'pending' || $book->request_status == 'rejected')
+                                                <form action="{{ route('book_issue.destroy', $book) }}" method="post" class="form-hidden">
+                                                    <button class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                    @csrf
+                                                </form>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="10">No Books Issued</td>
+                                    <td colspan="{{ !isset($role) || !in_array($role, ['Student', 'Teacher']) ? '10' : '7' }}">No Book Issues Found</td>
                                 </tr>
                             @endforelse
                         </tbody>
