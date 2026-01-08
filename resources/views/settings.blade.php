@@ -84,18 +84,24 @@
                                     @enderror
                                 </div>
                                 <div class="form-group">
-                                    <label>Max Books - Teachers <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="max_borrowing_limit_teacher" 
-                                        value="{{ old('max_borrowing_limit_teacher', $data->max_borrowing_limit_teacher ?? 10) }}" 
+                                    <label>Max Books - Admin <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="max_borrowing_limit_admin" 
+                                        value="{{ old('max_borrowing_limit_admin', $data->max_borrowing_limit_admin ?? 10) }}" 
                                         min="1" max="50" required>
-                                    @error('max_borrowing_limit_teacher')
+                                    @error('max_borrowing_limit_admin')
                                         <div class="alert alert-danger" role="alert">
                                             {{ $message }}
                                         </div>
                                     @enderror
                                 </div>
-                                <div class="form-group">
-                                    <label>Max Books - Librarians <span class="text-danger">*</span></label>
+                                <div class="form-group" style="display: none;">
+                                    <label>Max Books - Teachers (Deprecated) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="max_borrowing_limit_teacher" 
+                                        value="{{ old('max_borrowing_limit_teacher', $data->max_borrowing_limit_teacher ?? 10) }}" 
+                                        min="1" max="50">
+                                </div>
+                                <div class="form-group" style="display: none;">
+                                    <label>Max Books - Librarians (Deprecated) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control" name="max_borrowing_limit_librarian" 
                                         value="{{ old('max_borrowing_limit_librarian', $data->max_borrowing_limit_librarian ?? 15) }}" 
                                         min="1" max="50" required>

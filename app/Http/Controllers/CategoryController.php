@@ -69,7 +69,7 @@ class CategoryController extends Controller
         $category->name = $request->name;
         $category->save();
 
-        return redirect()->route('categories');
+        return redirect()->route('categories')->with('success', 'Category updated successfully');
     }
 
     /**
@@ -80,6 +80,6 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         category::find($id)->delete();
-        return redirect()->route('categories');
+        return redirect()->route('categories')->with('success', 'Category deleted successfully');
     }
 }

@@ -17,8 +17,8 @@ class UserRegistrationController extends Controller
     {
         $user = Auth::user();
         
-        if (!in_array($user->role, ['Admin', 'Librarian'])) {
-            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Administrators and Librarians can approve registrations.']);
+        if ($user->role !== 'Admin') {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Administrators can approve registrations.']);
         }
 
         $pendingRegistrations = User::where('registration_status', 'pending')
@@ -38,8 +38,8 @@ class UserRegistrationController extends Controller
     {
         $user = Auth::user();
         
-        if (!in_array($user->role, ['Admin', 'Librarian'])) {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Administrators and Librarians can approve registrations.']);
+        if ($user->role !== 'Admin') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Administrators can approve registrations.']);
         }
 
         $pendingUser = User::findOrFail($id);
@@ -55,8 +55,8 @@ class UserRegistrationController extends Controller
         $pendingUser->approved_at = Carbon::now();
         $pendingUser->save();
 
-        // Create student record if role is Student, Teacher, or Librarian
-        if (in_array($pendingUser->role, ['Student', 'Teacher', 'Librarian'])) {
+        // Create student record if role is Student
+        if ($pendingUser->role === 'Student') {
             // Check if student record already exists
             $existingStudent = student::where('user_id', $pendingUser->id)->first();
             
@@ -71,7 +71,7 @@ class UserRegistrationController extends Controller
                     'roll' => $pendingUser->roll,
                     'reg_no' => $pendingUser->reg_no,
                     'user_id' => $pendingUser->id,
-                    'borrowing_limit' => $pendingUser->role == 'Teacher' ? 10 : ($pendingUser->role == 'Librarian' ? 15 : 5),
+                    'borrowing_limit' => 5,
                     'class' => $pendingUser->department ?? 'General',
                     'age' => 'N/A',
                     'gender' => 'N/A',
@@ -90,8 +90,8 @@ class UserRegistrationController extends Controller
     {
         $user = Auth::user();
         
-        if (!in_array($user->role, ['Admin', 'Librarian'])) {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Administrators and Librarians can reject registrations.']);
+        if ($user->role !== 'Admin') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Administrators can reject registrations.']);
         }
 
         $request->validate([

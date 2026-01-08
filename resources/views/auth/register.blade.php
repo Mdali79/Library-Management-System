@@ -8,6 +8,11 @@
                     <div class="logo border border-danger">
                         <img src="{{ asset('images/library.png') }}" alt="">
                     </div>
+                    <div class="mb-3">
+                        <a href="{{ route('login') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Login
+                        </a>
+                    </div>
                     <form class="yourform" action="{{ route('register.store') }}" method="post" enctype="multipart/form-data" id="registrationForm" onsubmit="return validateDepartment()">
                         @csrf
                         <h3 class="heading">
@@ -55,22 +60,20 @@
                             <select name="role" class="form-control @error('role') is-invalid @enderror" required id="roleSelect" onchange="toggleRoleFields()">
                                 <option value="">Select Role</option>
                                 <option value="Student" {{ old('role') == 'Student' ? 'selected' : '' }}>Student</option>
-                                <option value="Teacher" {{ old('role') == 'Teacher' ? 'selected' : '' }}>Teacher</option>
-                                <option value="Librarian" {{ old('role') == 'Librarian' ? 'selected' : '' }}>Librarian</option>
                                 <option value="Admin" {{ old('role') == 'Admin' ? 'selected' : '' }}>Admin</option>
                             </select>
                             <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> Select your role. Admin/Librarian registrations require approval.
+                                <i class="fas fa-info-circle"></i> Select your role. Admin registrations require approval.
                             </small>
                             @error('role')
                                 <div class="alert alert-danger">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <!-- Student/Teacher Specific Fields -->
+                        <!-- Student Specific Fields -->
                         <div id="studentFields" style="display: none;">
                             <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> <strong>Student/Teacher Information</strong>
+                                <i class="fas fa-info-circle"></i> <strong>Student Information</strong>
                             </div>
                             
                             <div class="form-group">
@@ -100,8 +103,21 @@
 
                             <div class="form-group">
                                 <label>Batch <span class="text-danger">*</span></label>
-                                <input type="text" name="batch" id="batch" class="form-control @error('batch') is-invalid @enderror" 
-                                    value="{{ old('batch') }}" placeholder="e.g., 2024">
+                                <select name="batch" id="batch" class="form-control @error('batch') is-invalid @enderror" required>
+                                    <option value="">Select Batch</option>
+                                    @php
+                                        $currentYear = date('Y');
+                                        $batches = [];
+                                        // Generate batches from 2020 to current year + 2
+                                        for ($year = 2020; $year <= $currentYear + 2; $year++) {
+                                            $batches[] = $year;
+                                        }
+                                        $selectedBatch = old('batch');
+                                    @endphp
+                                    @foreach($batches as $batch)
+                                        <option value="{{ $batch }}" {{ $selectedBatch == $batch ? 'selected' : '' }}>{{ $batch }}</option>
+                                    @endforeach
+                                </select>
                                 @error('batch')
                                     <div class="alert alert-danger">{{ $message }}</div>
                                 @enderror
@@ -126,10 +142,10 @@
                             </div>
                         </div>
 
-                        <!-- Admin/Librarian Specific Fields -->
+                        <!-- Admin Specific Fields -->
                         <div id="adminFields" style="display: none;">
                             <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Admin/Librarian registrations require approval from an existing Administrator or Librarian.
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Note:</strong> Admin registrations require approval from an existing Administrator.
                             </div>
                             
                             <div class="form-group">
@@ -199,7 +215,7 @@
             if (regNoField) regNoField.removeAttribute('required');
             
             // Show relevant fields based on role
-            if (selectedRole === 'Student' || selectedRole === 'Teacher') {
+            if (selectedRole === 'Student') {
                 if (studentFields) studentFields.style.display = 'block';
                 // Make student fields required and enable them
                 if (deptField) {
@@ -227,7 +243,7 @@
                     adminDeptField.value = '';
                     adminDeptField.setAttribute('disabled', 'disabled');
                 }
-            } else if (selectedRole === 'Admin' || selectedRole === 'Librarian') {
+            } else if (selectedRole === 'Admin') {
                 if (adminFields) adminFields.style.display = 'block';
                 // Disable student department field
                 if (deptField) {
@@ -307,7 +323,7 @@
             const adminDeptField = document.getElementById('admin_department');
             const studentFields = document.getElementById('studentFields');
             
-            if (roleSelect && (roleSelect.value === 'Student' || roleSelect.value === 'Teacher')) {
+            if (roleSelect && roleSelect.value === 'Student') {
                 if (studentFields && studentFields.style.display !== 'none') {
                     // Ensure student department field is enabled
                     if (deptField) {
@@ -327,7 +343,7 @@
                         return false;
                     }
                 }
-            } else if (roleSelect && (roleSelect.value === 'Admin' || roleSelect.value === 'Librarian')) {
+            } else if (roleSelect && roleSelect.value === 'Admin') {
                 // Ensure student department field is disabled
                 if (deptField) {
                     deptField.setAttribute('disabled', 'disabled');

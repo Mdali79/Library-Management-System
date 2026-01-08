@@ -29,7 +29,7 @@ class BookIssueController extends Controller
         $role = $user->role;
 
         // Students see only their own issues
-        if ($role == 'Student' || $role == 'Teacher') {
+        if ($role == 'Student') {
             $studentRecord = student::where('user_id', $user->id)->first();
             if ($studentRecord) {
                 $books = book_issue::where('student_id', $studentRecord->id)
@@ -41,7 +41,7 @@ class BookIssueController extends Controller
                 $books = book_issue::where('id', 0)->paginate(10);
             }
         } else {
-            // Admin and Librarian see all issues
+            // Admin see all issues
             $books = book_issue::with(['book', 'student', 'approver'])
                 ->latest()
                 ->paginate(10);
@@ -64,17 +64,17 @@ class BookIssueController extends Controller
         $role = $user->role;
 
         // If student/teacher, show self-service form
-        if (in_array($role, ['Student', 'Teacher'])) {
+        if ($role === 'Student') {
             return $this->studentRequestForm();
         }
 
-        // Admin/Librarian can issue to any member
+        // Admin can issue to any member
         return view('book.issueBook_add', [
             'students' => student::with('user')->latest()->get(),
-            'books' => book::where(function($query) {
+            'books' => book::where(function ($query) {
                 $query->where('available_quantity', '>', 0)
-                      ->orWhereNull('available_quantity')
-                      ->orWhere('status', 'Y');
+                    ->orWhereNull('available_quantity')
+                    ->orWhere('status', 'Y');
             })->get(),
         ]);
     }
@@ -86,14 +86,14 @@ class BookIssueController extends Controller
     {
         $user = Auth::user();
         $student = student::where('user_id', $user->id)->first();
-        
+
         if (!$student) {
             return redirect()->route('dashboard')->withErrors(['error' => 'Student profile not found. Please contact administrator.']);
         }
 
         return view('book.student_request', [
             'student' => $student,
-            'books' => book::with(['auther', 'category', 'publisher'])->get(),
+            'books' => book::with(['auther', 'authors', 'category', 'publisher'])->get(),
         ]);
     }
 
@@ -110,18 +110,18 @@ class BookIssueController extends Controller
         $settings = settings::latest()->first();
 
         // If student/teacher making request
-        if (in_array($role, ['Student', 'Teacher'])) {
+        if ($role === 'Student') {
             return $this->studentRequest($request);
         }
 
-        // For Admin/Librarian, validate with FormRequest
+        // For Admin, validate with FormRequest
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'book_id' => 'required|exists:books,id',
             'issue_date' => 'nullable|date',
         ]);
 
-        // Admin/Librarian direct issue (existing functionality)
+        // Admin direct issue (existing functionality)
         $student = student::find($validated['student_id']);
         $book = book::find($validated['book_id']);
 
@@ -130,11 +130,8 @@ class BookIssueController extends Controller
             ->where('issue_status', 'N')
             ->where('request_status', '!=', 'rejected')
             ->count();
-        
-        $borrowingLimit = $student->borrowing_limit ?? 
-            ($student->role == 'Teacher' ? $settings->max_borrowing_limit_teacher : 
-             ($student->role == 'Librarian' ? $settings->max_borrowing_limit_librarian : 
-              $settings->max_borrowing_limit_student));
+
+        $borrowingLimit = $student->borrowing_limit ?? $settings->max_borrowing_limit_student;
 
         if ($currentIssues >= $borrowingLimit) {
             return redirect()->back()->withErrors(['error' => 'Borrowing limit reached. Maximum ' . $borrowingLimit . ' books allowed.']);
@@ -147,7 +144,7 @@ class BookIssueController extends Controller
 
         $issue_date = $validated['issue_date'] ?? Carbon::now();
         $return_date = Carbon::parse($issue_date)->addDays($settings->return_days);
-        
+
         $receiptNumber = 'ISSUE-' . strtoupper(Str::random(8));
 
         $bookIssue = book_issue::create([
@@ -174,13 +171,13 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Student/Teacher book request
+     * Student book request
      */
     private function studentRequest(Request $request)
     {
         $user = Auth::user();
         $student = student::where('user_id', $user->id)->first();
-        
+
         if (!$student) {
             return redirect()->back()->withErrors(['error' => 'Student profile not found.']);
         }
@@ -197,10 +194,8 @@ class BookIssueController extends Controller
             ->where('issue_status', 'N')
             ->whereIn('request_status', ['pending', 'approved', 'issued'])
             ->count();
-        
-        $borrowingLimit = $student->borrowing_limit ?? 
-            ($student->role == 'Teacher' ? $settings->max_borrowing_limit_teacher : 
-             $settings->max_borrowing_limit_student);
+
+        $borrowingLimit = $student->borrowing_limit ?? $settings->max_borrowing_limit_student;
 
         if ($currentIssues >= $borrowingLimit) {
             return redirect()->back()->withErrors(['error' => 'Borrowing limit reached. Maximum ' . $borrowingLimit . ' books allowed.']);
@@ -234,14 +229,14 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Show pending requests for Librarian/Admin approval
+     * Show pending requests for Admin approval
      */
     public function pendingRequests()
     {
         $user = Auth::user();
-        
-        if (!in_array($user->role, ['Librarian', 'Admin'])) {
-            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Librarians and Admins can approve requests.']);
+
+        if ($user->role !== 'Admin') {
+            return redirect()->route('dashboard')->withErrors(['error' => 'Access denied. Only Admins can approve requests.']);
         }
 
         $pendingRequests = book_issue::where('request_status', 'pending')
@@ -255,18 +250,18 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Approve book request (Librarian/Admin)
+     * Approve book request (Admin)
      */
     public function approveRequest(Request $request, $id)
     {
         $user = Auth::user();
-        
-        if (!in_array($user->role, ['Librarian', 'Admin'])) {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians and Admins can approve requests.']);
+
+        if ($user->role !== 'Admin') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Admins can approve requests.']);
         }
 
         $bookIssue = book_issue::with(['book', 'student'])->findOrFail($id);
-        
+
         if ($bookIssue->request_status != 'pending') {
             return redirect()->back()->withErrors(['error' => 'This request is not pending approval.']);
         }
@@ -285,10 +280,8 @@ class BookIssueController extends Controller
             ->where('issue_status', 'N')
             ->whereIn('request_status', ['approved', 'issued'])
             ->count();
-        
-        $borrowingLimit = $student->borrowing_limit ?? 
-            ($student->role == 'Teacher' ? $settings->max_borrowing_limit_teacher : 
-             $settings->max_borrowing_limit_student);
+
+        $borrowingLimit = $student->borrowing_limit ?? $settings->max_borrowing_limit_student;
 
         if ($currentIssues >= $borrowingLimit) {
             return redirect()->back()->withErrors(['error' => 'Student has reached borrowing limit. Cannot approve request.']);
@@ -296,7 +289,7 @@ class BookIssueController extends Controller
 
         // Approve and issue
         $receiptNumber = 'ISSUE-' . strtoupper(Str::random(8));
-        
+
         $bookIssue->request_status = 'issued';
         $bookIssue->issue_status = 'N';
         $bookIssue->approved_by = $user->id;
@@ -314,14 +307,14 @@ class BookIssueController extends Controller
     }
 
     /**
-     * Reject book request (Librarian/Admin)
+     * Reject book request (Admin)
      */
     public function rejectRequest(Request $request, $id)
     {
         $user = Auth::user();
-        
-        if (!in_array($user->role, ['Librarian', 'Admin'])) {
-            return redirect()->back()->withErrors(['error' => 'Access denied. Only Librarians and Admins can reject requests.']);
+
+        if ($user->role !== 'Admin') {
+            return redirect()->back()->withErrors(['error' => 'Access denied. Only Admins can reject requests.']);
         }
 
         $request->validate([
@@ -329,7 +322,7 @@ class BookIssueController extends Controller
         ]);
 
         $bookIssue = book_issue::findOrFail($id);
-        
+
         if ($bookIssue->request_status != 'pending') {
             return redirect()->back()->withErrors(['error' => 'This request is not pending approval.']);
         }
@@ -350,13 +343,13 @@ class BookIssueController extends Controller
     {
         $bookIssue = book_issue::with(['book', 'student'])->findOrFail($id);
         $settings = settings::latest()->first();
-        
+
         // Calculate fine if overdue
         $fine = 0;
         $daysOverdue = 0;
         $returnDate = Carbon::parse($bookIssue->return_date);
         $today = Carbon::now();
-        
+
         if ($today->gt($returnDate)) {
             $daysOverdue = $today->diffInDays($returnDate);
             // Only charge fine if past grace period
@@ -387,7 +380,7 @@ class BookIssueController extends Controller
         $settings = settings::latest()->first();
         $returnDate = Carbon::parse($bookIssue->return_date);
         $today = Carbon::now();
-        
+
         // Calculate fine
         $fine = 0;
         $daysOverdue = 0;
@@ -445,9 +438,9 @@ class BookIssueController extends Controller
     {
         $user = Auth::user();
         $bookIssue = book_issue::findOrFail($id);
-        
+
         // Students can only cancel their own pending requests
-        if (in_array($user->role, ['Student', 'Teacher'])) {
+        if ($user->role === 'Student') {
             $student = student::where('user_id', $user->id)->first();
             if ($bookIssue->student_id != $student->id || $bookIssue->request_status != 'pending') {
                 return redirect()->back()->withErrors(['error' => 'You can only cancel your own pending requests.']);
@@ -455,8 +448,8 @@ class BookIssueController extends Controller
             $bookIssue->delete();
             return redirect()->route('book_issued')->with('success', 'Request cancelled successfully.');
         }
-        
-        // Admin/Librarian can delete any
+
+        // Admin can delete any
         book_issue::find($id)->delete();
         return redirect()->route('book_issued');
     }

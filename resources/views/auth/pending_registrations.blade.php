@@ -45,8 +45,6 @@
                                     <td>
                                         @if($registration->role == 'Admin')
                                             <span class='badge badge-danger'>Admin</span>
-                                        @elseif($registration->role == 'Librarian')
-                                            <span class='badge badge-warning'>Librarian</span>
                                         @else
                                             <span class='badge badge-info'>{{ $registration->role }}</span>
                                         @endif

@@ -2,9 +2,40 @@
 @section('content')
     <div id="admin-content">
         <div class="container">
-            <div class="row">
-                <div class="col-md-12">
+            <div class="row mb-4">
+                <div class="col-md-6">
                     <h2 class="admin-heading">Dashboard - {{ auth()->user()->role }}</h2>
+                </div>
+            </div>
+
+            <!-- Dashboard Search Bar -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                        <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none;">
+                            <h5 style="margin: 0; font-weight: 600;">
+                                <i class="fas fa-search"></i> Quick Search
+                            </h5>
+                        </div>
+                        <div class="card-body" style="background: #ffffff;">
+                            <form method="GET" action="{{ route('books') }}" id="dashboard-search-form">
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <div class="form-group" style="position: relative;">
+                                            <input type="text" name="search" id="dashboard-search-input" class="form-control form-control-lg"
+                                                placeholder="Search books, authors, categories..." autocomplete="off">
+                                            <div id="dashboard-suggestions" class="suggestions-dropdown" style="display: none;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                                            <i class="fas fa-search"></i> Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -60,8 +91,8 @@
                 </div>
             </div>
 
-            <!-- Additional Statistics for Admin/Librarian -->
-            @if(in_array($role, ['Admin', 'Librarian']))
+            <!-- Additional Statistics for Admin -->
+            @if($role === 'Admin')
             <div class="row mb-4">
                 <div class="col-md-3 mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none;">
@@ -109,7 +140,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Pending Registrations Card -->
             @if(isset($pending_registrations) && $pending_registrations > 0)
             <div class="row mb-4">
@@ -117,8 +148,8 @@
                     <div class="alert alert-warning" style="border-left: 4px solid #f59e0b;">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <i class="fas fa-user-clock"></i> 
-                                <strong>{{ $pending_registrations }} Pending User Registration(s)</strong> 
+                                <i class="fas fa-user-clock"></i>
+                                <strong>{{ $pending_registrations }} Pending User Registration(s)</strong>
                                 waiting for approval
                             </div>
                             <a href="{{ route('registrations.pending') }}" class="btn btn-warning btn-sm">
@@ -148,7 +179,7 @@
             </div>
 
             <!-- Role-Based Content -->
-            @if(in_array($role, ['Student', 'Teacher', 'Librarian']) && isset($my_issued_books))
+            @if($role === 'Student' && isset($my_issued_books))
             <div class="row mb-4">
                 <div class="col-md-12">
                     <div class="card">
@@ -226,8 +257,8 @@
             @endif
             @endif
 
-            <!-- Overdue Books for Admin/Librarian -->
-            @if(in_array($role, ['Admin', 'Librarian']) && isset($overdue_books) && count($overdue_books) > 0)
+            <!-- Overdue Books for Admin -->
+            @if($role === 'Admin' && isset($overdue_books) && count($overdue_books) > 0)
             <div class="row mb-4">
                 <div class="col-md-12">
                     <div class="card border-danger">
@@ -273,7 +304,7 @@
         // Monthly Activity Chart
         const ctx = document.getElementById('monthlyChart').getContext('2d');
         const monthlyData = @json($monthly_activity);
-        
+
         new Chart(ctx, {
             type: 'line',
             data: {
@@ -302,5 +333,81 @@
                 }
             }
         });
+
+        // Dashboard Search Suggestions
+        const dashboardSearchInput = document.getElementById('dashboard-search-input');
+        const dashboardSuggestionsDiv = document.getElementById('dashboard-suggestions');
+        const dashboardSuggestions = @json($search_suggestions ?? []);
+
+        dashboardSearchInput.addEventListener('focus', function() {
+            if (dashboardSuggestions.length > 0) {
+                showDashboardSuggestions();
+            }
+        });
+
+        dashboardSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            if (searchTerm.length > 0) {
+                const filtered = dashboardSuggestions.filter(s => s.toLowerCase().includes(searchTerm));
+                if (filtered.length > 0) {
+                    displayDashboardSuggestions(filtered);
+                } else {
+                    dashboardSuggestionsDiv.style.display = 'none';
+                }
+            } else {
+                showDashboardSuggestions();
+            }
+        });
+
+        function showDashboardSuggestions() {
+            displayDashboardSuggestions(dashboardSuggestions);
+        }
+
+        function displayDashboardSuggestions(items) {
+            dashboardSuggestionsDiv.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = item;
+                div.addEventListener('click', function() {
+                    dashboardSearchInput.value = item;
+                    dashboardSuggestionsDiv.style.display = 'none';
+                    document.getElementById('dashboard-search-form').submit();
+                });
+                dashboardSuggestionsDiv.appendChild(div);
+            });
+            dashboardSuggestionsDiv.style.display = 'block';
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!dashboardSearchInput.contains(e.target) && !dashboardSuggestionsDiv.contains(e.target)) {
+                dashboardSuggestionsDiv.style.display = 'none';
+            }
+        });
     </script>
+
+    <style>
+        .suggestions-dropdown {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+    </style>
 @endsection

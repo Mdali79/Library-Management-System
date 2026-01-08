@@ -34,7 +34,7 @@
                         </div>
                         <div class="mt-3 text-center">
                             <small class="text-white" style="opacity: 0.8;">
-                                Register as Student, Teacher, Librarian, or Admin
+                                Register as Student or Admin
                             </small>
                         </div>
                     </form>

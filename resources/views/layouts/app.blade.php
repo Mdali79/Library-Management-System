@@ -29,6 +29,9 @@
                             <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
                         </button>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
+                            <a class="dropdown-item" href="{{ route('profile.show') }}">
+                                <i class="fas fa-user"></i> My Profile
+                            </a>
                             <a class="dropdown-item" href="{{ route('change_password') }}">
                                 <i class="fas fa-key"></i> Change Password
                             </a>
@@ -52,29 +55,29 @@
                 <div class="col-md-12">
                     <ul class="menu">
                         <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
-                        @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
+                        @if(auth()->user()->role == 'Admin')
                             <li><a href="{{ route('authors') }}"><i class="fas fa-user-edit"></i> Authors</a></li>
                             <li><a href="{{ route('publishers') }}"><i class="fas fa-building"></i> Publishers</a></li>
                             <li><a href="{{ route('categories') }}"><i class="fas fa-tags"></i> Categories</a></li>
                             <li><a href="{{ route('students') }}"><i class="fas fa-users"></i> Members</a></li>
                         @endif
                         <li><a href="{{ route('books') }}"><i class="fas fa-book"></i> Books</a></li>
-                        @if(in_array(auth()->user()->role, ['Student', 'Teacher']))
+                        @if(auth()->user()->role == 'Student')
                             <li><a href="{{ route('book_issue.create') }}"><i class="fas fa-hand-holding"></i> Request Book</a></li>
                             <li><a href="{{ route('book_issued') }}"><i class="fas fa-list"></i> My Requests</a></li>
                         @endif
-                        @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
+                        @if(auth()->user()->role == 'Admin')
                             <li><a href="{{ route('book_issued') }}"><i class="fas fa-hand-holding"></i> Book Issue</a></li>
                             <li><a href="{{ route('book_issue.pending') }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
                             <li><a href="{{ route('reservations.index') }}"><i class="fas fa-calendar-check"></i> Reservations</a></li>
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> Fines</a></li>
                         @endif
-                        @if(in_array(auth()->user()->role, ['Student', 'Teacher']))
+                        @if(auth()->user()->role == 'Student')
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
                             <li><a href="{{ route('chatbot.index') }}"><i class="fas fa-robot"></i> Chatbot</a></li>
                         @endif
                         <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                        @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
+                        @if(auth()->user()->role == 'Admin')
                             <li><a href="{{ route('registrations.pending') }}"><i class="fas fa-user-clock"></i> Pending Registrations</a></li>
                         @endif
                         @if(auth()->user()->role == 'Admin')

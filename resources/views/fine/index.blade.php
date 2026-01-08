@@ -7,7 +7,7 @@
                     <h2 class="admin-heading">Fine Management</h2>
                 </div>
                 <div class="offset-md-6 col-md-3">
-                    @if(in_array($role, ['Admin', 'Librarian']))
+                    @if($role === 'Admin')
                         <form action="{{ route('fines.calculate_overdue') }}" method="POST" style="display: inline;">
                             @csrf
                             <button type="submit" class="btn btn-warning" onclick="return confirm('Calculate fines for all overdue books?')">
@@ -73,7 +73,7 @@
                                     <option value="waived" {{ request('status') == 'waived' ? 'selected' : '' }}>Waived</option>
                                 </select>
                             </div>
-                            @if(in_array($role, ['Admin', 'Librarian']))
+                            @if($role === 'Admin')
                                 <div class="col-md-3">
                                     <input type="text" name="student_id" class="form-control" 
                                         placeholder="Student ID" value="{{ request('student_id') }}">
@@ -123,7 +123,7 @@
                                     <td>{{ $fine->paid_at ? \Carbon\Carbon::parse($fine->paid_at)->format('d M Y') : 'N/A' }}</td>
                                     <td>
                                         @if($fine->status == 'pending')
-                                            @if(in_array($role, ['Student', 'Teacher']))
+                                            @if($role === 'Student')
                                                 @php
                                                     $student = \App\Models\student::where('user_id', auth()->id())->first();
                                                     $canPay = $student && $fine->student_id == $student->id;
@@ -135,7 +135,7 @@
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             @else
-                                                {{-- Admin/Librarian can pay any fine --}}
+                                                {{-- Admin can pay any fine --}}
                                                 <button type="button" class="btn btn-sm btn-primary" 
                                                     data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
                                                 <form action="{{ route('fines.waive', $fine->id) }}" method="POST" style="display: inline;">

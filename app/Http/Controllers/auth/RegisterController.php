@@ -31,20 +31,20 @@ class RegisterController extends Controller
             'username' => 'required|string|max:255|unique:users',
             'email' => 'nullable|email|unique:users',
             'contact' => 'nullable|string|max:20',
-            'role' => 'required|in:Student,Teacher,Librarian,Admin',
+            'role' => 'required|in:Student,Admin',
             'password' => 'required|string|min:8|confirmed',
         ];
 
-        // Student/Teacher require student-specific fields
-        if (in_array($request->role, ['Student', 'Teacher'])) {
+        // Student requires student-specific fields
+        if ($request->role === 'Student') {
             $rules['department'] = 'required|string|max:255|not_in:Select Department';
             $rules['batch'] = 'required|string|max:50';
             $rules['roll'] = 'required|string|max:50';
             $rules['reg_no'] = 'required|string|unique:users';
-            // Admin department should not be submitted for Student/Teacher
+            // Admin department should not be submitted for Student
             $rules['admin_department'] = 'nullable';
         } else {
-            // Admin/Librarian - use admin_department instead
+            // Admin - use admin_department instead
             $rules['admin_department'] = 'nullable|string|max:255';
             $rules['department'] = 'nullable|string|max:255'; // Ignore student department field
             $rules['batch'] = 'nullable|string|max:50';
@@ -56,7 +56,7 @@ class RegisterController extends Controller
 
         // Custom validation message for department
         $validator->after(function ($validator) use ($request) {
-            if (in_array($request->role, ['Student', 'Teacher'])) {
+            if ($request->role === 'Student') {
                 // Get department value - should come from the dropdown
                 $department = $request->input('department');
                 // Check if it's empty, null, or the placeholder value
@@ -76,13 +76,13 @@ class RegisterController extends Controller
         $verificationCode = Str::random(6);
 
         // Determine registration status based on role
-        // Student/Teacher: Auto-approved
-        // Admin/Librarian: Requires approval
-        $registrationStatus = in_array($request->role, ['Student', 'Teacher']) ? 'approved' : 'pending';
-        $isVerified = in_array($request->role, ['Student', 'Teacher']) ? true : false;
+        // Student: Auto-approved
+        // Admin: Requires approval
+        $registrationStatus = $request->role === 'Student' ? 'approved' : 'pending';
+        $isVerified = $request->role === 'Student' ? true : false;
 
         // Create user
-        // For Admin/Librarian, only save department if provided, other fields should be null
+        // For Admin, only save department if provided, other fields should be null
         $userData = [
             'name' => $request->name,
             'username' => $request->username,
@@ -96,15 +96,15 @@ class RegisterController extends Controller
         ];
 
         // Add role-specific fields
-        if (in_array($request->role, ['Student', 'Teacher'])) {
-            // Student/Teacher - all fields required
+        if ($request->role === 'Student') {
+            // Student - all fields required
             // Use department field (from dropdown), ignore admin_department
             $userData['department'] = $request->department;
             $userData['batch'] = $request->batch;
             $userData['roll'] = $request->roll;
             $userData['reg_no'] = $request->reg_no;
         } else {
-            // Admin/Librarian - use admin_department if provided, otherwise null
+            // Admin - use admin_department if provided, otherwise null
             // Ignore the student department field
             $userData['department'] = $request->admin_department ?: null;
             $userData['batch'] = null;
@@ -114,8 +114,8 @@ class RegisterController extends Controller
 
         $user = User::create($userData);
 
-        // Create student record if role is Student, Teacher, or Librarian (only if approved)
-        if (in_array($request->role, ['Student', 'Teacher', 'Librarian']) && $registrationStatus == 'approved') {
+        // Create student record if role is Student (only if approved)
+        if ($request->role === 'Student' && $registrationStatus == 'approved') {
             student::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -126,7 +126,7 @@ class RegisterController extends Controller
                 'roll' => $request->roll,
                 'reg_no' => $request->reg_no,
                 'user_id' => $user->id,
-                'borrowing_limit' => $request->role == 'Teacher' ? 10 : ($request->role == 'Librarian' ? 15 : 5),
+                'borrowing_limit' => 5,
                 'class' => $request->department ?? 'General',
                 'age' => 'N/A',
                 'gender' => 'N/A',
@@ -140,7 +140,7 @@ class RegisterController extends Controller
 
         // Different messages based on registration status
         if ($registrationStatus == 'pending') {
-            return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator or Librarian. You will be notified once approved.');
+            return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator. You will be notified once approved.');
         } else {
             return redirect()->route('login')->with('success', 'Registration successful! You can now login with your credentials.');
         }

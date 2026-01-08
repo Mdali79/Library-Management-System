@@ -27,6 +27,7 @@ class User extends Authenticatable
         'batch',
         'roll',
         'reg_no',
+        'profile_picture',
         'password',
         'is_verified',
         'verification_code',

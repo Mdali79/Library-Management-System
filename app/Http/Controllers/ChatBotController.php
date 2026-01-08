@@ -17,7 +17,7 @@ class ChatBotController extends Controller
     {
         // Only allow students to access chatbot
         $user = Auth::user();
-        if (!in_array($user->role, ['Student', 'Teacher'])) {
+        if ($user->role !== 'Student') {
             return redirect()->route('dashboard')->withErrors(['error' => 'Chatbot is only available for students.']);
         }
 
@@ -30,13 +30,13 @@ class ChatBotController extends Controller
     public function chat(Request $request)
     {
         $user = Auth::user();
-        
-        if (!in_array($user->role, ['Student', 'Teacher'])) {
+
+        if ($user->role !== 'Student') {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $message = trim($request->input('message', ''));
-        
+
         if (empty($message)) {
             return response()->json([
                 'reply' => 'Please enter a message.',
@@ -44,50 +44,12 @@ class ChatBotController extends Controller
             ]);
         }
 
-        // Check if message is asking about a book (prioritize book search)
-        $bookKeywords = ['book', 'available', 'have', 'find', 'search', 'is', 'are', 'can i get', 'do you have', 'show me'];
         $messageLower = strtolower($message);
-        $isBookQuery = false;
-        
-        // Check if message contains book-related keywords or looks like a book name
-        foreach ($bookKeywords as $keyword) {
-            if (strpos($messageLower, $keyword) !== false) {
-                $isBookQuery = true;
-                break;
-            }
-        }
-        
-        // If message is longer than 3 words and doesn't start with common question words, likely a book name
-        $words = explode(' ', trim($message));
-        if (count($words) > 2 && !in_array(strtolower($words[0]), ['what', 'how', 'when', 'where', 'why', 'who', 'can', 'do', 'does', 'is', 'are'])) {
-            $isBookQuery = true;
-        }
 
-        // If it's likely a book query, search books first
-        if ($isBookQuery) {
-            $bookResult = $this->searchCSEBooks($message);
-            
-            if ($bookResult && is_array($bookResult) && !empty($bookResult['books'])) {
-                return response()->json([
-                    'reply' => $bookResult['message'],
-                    'type' => 'book_search',
-                    'books' => $bookResult['books'] ?? []
-                ]);
-            } elseif ($bookResult && is_string($bookResult) && strpos($bookResult, "I found") !== false) {
-                return response()->json([
-                    'reply' => $bookResult,
-                    'type' => 'book_search',
-                    'books' => []
-                ]);
-            }
-        }
-
-        // Load Q&A from CSV file
+        // FIRST: Load Q&A from CSV file and check if message matches any Q&A
         $qaData = $this->loadQAFromCSV();
-        
-        // Check if message matches any Q&A
         $reply = $this->checkQA($message, $qaData);
-        
+
         if ($reply) {
             return response()->json([
                 'reply' => $reply,
@@ -95,10 +57,48 @@ class ChatBotController extends Controller
             ]);
         }
 
-        // If book query didn't find results, try book search again with original message
-        if (!$isBookQuery) {
+        // SECOND: Check if message is asking about a book (only after Q&A check fails)
+        // More specific book query detection - only trigger on clear book search patterns
+        $bookQueryPatterns = [
+            'is.*available',
+            'do you have.*book',
+            'find.*book',
+            'search.*book',
+            'show me.*book',
+            'can i get.*book',
+            'is.*book.*available',
+            'book.*available',
+            'available.*book',
+            'find.*by',
+            'search for.*',
+            'show.*book',
+            'get.*book'
+        ];
+
+        $isBookQuery = false;
+        $words = explode(' ', trim($message));
+
+        // Check for specific book query patterns
+        foreach ($bookQueryPatterns as $pattern) {
+            if (preg_match('/' . $pattern . '/i', $message)) {
+                $isBookQuery = true;
+                break;
+            }
+        }
+
+        // If message is a single word or short phrase (likely a book name), treat as book query
+        if (!$isBookQuery && count($words) <= 3 && count($words) > 0) {
+            // Check if it doesn't start with question words
+            $firstWord = strtolower($words[0]);
+            if (!in_array($firstWord, ['what', 'how', 'when', 'where', 'why', 'who', 'can', 'do', 'does', 'is', 'are', 'tell', 'explain'])) {
+                $isBookQuery = true;
+            }
+        }
+
+        // If it's likely a book query, search books
+        if ($isBookQuery) {
             $bookResult = $this->searchCSEBooks($message);
-            
+
             if ($bookResult && is_array($bookResult) && !empty($bookResult['books'])) {
                 return response()->json([
                     'reply' => $bookResult['message'],
@@ -127,7 +127,7 @@ class ChatBotController extends Controller
     private function loadQAFromCSV()
     {
         $csvPath = storage_path('app/chatbot_qa.csv');
-        
+
         // Create CSV file if it doesn't exist
         if (!file_exists($csvPath)) {
             $this->createDefaultCSV($csvPath);
@@ -137,7 +137,7 @@ class ChatBotController extends Controller
         if (($handle = fopen($csvPath, "r")) !== FALSE) {
             // Skip header row
             fgetcsv($handle);
-            
+
             while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
                 if (count($data) >= 2) {
                     $qaData[] = [
@@ -181,28 +181,58 @@ class ChatBotController extends Controller
      */
     private function checkQA($message, $qaData)
     {
-        $messageLower = strtolower($message);
-        
+        $messageLower = strtolower(trim($message));
+        $messageWords = array_filter(explode(' ', $messageLower), function ($word) {
+            return strlen(trim($word)) > 2; // Filter out very short words
+        });
+
+        $bestMatch = null;
+        $bestScore = 0;
+
         foreach ($qaData as $qa) {
-            $questionLower = strtolower($qa['question']);
-            
-            // Check if message contains keywords from question
-            $questionWords = explode(' ', $questionLower);
-            $matchedWords = 0;
-            
-            foreach ($questionWords as $word) {
-                if (strlen($word) > 3 && strpos($messageLower, $word) !== false) {
-                    $matchedWords++;
-                }
-            }
-            
-            // If 2 or more significant words match, return the answer
-            if ($matchedWords >= 2 || strpos($messageLower, $questionLower) !== false) {
+            $questionLower = strtolower(trim($qa['question']));
+            $questionWords = array_filter(explode(' ', $questionLower), function ($word) {
+                return strlen(trim($word)) > 2;
+            });
+
+            $score = 0;
+
+            // Exact match (highest priority)
+            if ($messageLower === $questionLower) {
                 return $qa['answer'];
             }
+
+            // Check if message contains the full question
+            if (strpos($messageLower, $questionLower) !== false || strpos($questionLower, $messageLower) !== false) {
+                $score += 100;
+            }
+
+            // Count matching significant words
+            $matchedWords = 0;
+            foreach ($questionWords as $qWord) {
+                if (in_array($qWord, $messageWords)) {
+                    $matchedWords++;
+                    $score += 10;
+                } elseif (strpos($messageLower, $qWord) !== false) {
+                    $matchedWords++;
+                    $score += 5; // Partial match gets lower score
+                }
+            }
+
+            // If most words match, it's a good match
+            if ($matchedWords > 0 && count($questionWords) > 0) {
+                $matchRatio = $matchedWords / count($questionWords);
+                $score += $matchRatio * 50;
+            }
+
+            // If score is high enough, this is a good match
+            if ($score > $bestScore && ($matchedWords >= 2 || $score >= 30)) {
+                $bestScore = $score;
+                $bestMatch = $qa['answer'];
+            }
         }
-        
-        return null;
+
+        return $bestMatch;
     }
 
     /**
@@ -212,16 +242,31 @@ class ChatBotController extends Controller
     {
         // Get all CSE-related categories dynamically
         $cseCategoryKeywords = [
-            'Computer Science', 'Computer Sciences', 'Programming', 'Software Engineering',
-            'Data Structures', 'Algorithms', 'Database', 'Web Development', 'Machine Learning',
-            'Artificial Intelligence', 'Programming Languages', 'Data Structures & Algorithms',
-            'Database Systems', 'Computer Networks', 'Operating Systems', 'Mobile Development',
-            'Cybersecurity', 'Cloud Computing', 'Computer Architecture', 'Software Testing',
+            'Computer Science',
+            'Computer Sciences',
+            'Programming',
+            'Software Engineering',
+            'Data Structures',
+            'Algorithms',
+            'Database',
+            'Web Development',
+            'Machine Learning',
+            'Artificial Intelligence',
+            'Programming Languages',
+            'Data Structures & Algorithms',
+            'Database Systems',
+            'Computer Networks',
+            'Operating Systems',
+            'Mobile Development',
+            'Cybersecurity',
+            'Cloud Computing',
+            'Computer Architecture',
+            'Software Testing',
             'Project Management'
         ];
 
         // Get all categories that match CSE keywords
-        $cseCategories = category::where(function($q) use ($cseCategoryKeywords) {
+        $cseCategories = category::where(function ($q) use ($cseCategoryKeywords) {
             foreach ($cseCategoryKeywords as $keyword) {
                 $q->orWhere('name', 'like', "%{$keyword}%");
             }
@@ -235,39 +280,46 @@ class ChatBotController extends Controller
         // Clean and prepare search query
         $query = trim($query);
         $queryWords = explode(' ', $query);
-        $queryWords = array_filter($queryWords, function($word) {
+        $queryWords = array_filter($queryWords, function ($word) {
             return strlen(trim($word)) > 2; // Filter out very short words
         });
 
         // First, try exact and partial matches
-        $books = book::with(['auther', 'category', 'publisher'])
+        $books = book::with(['auther', 'authors', 'category', 'publisher'])
             ->whereIn('category_id', $cseCategories)
-            ->where(function($q) use ($query, $queryWords) {
+            ->where(function ($q) use ($query, $queryWords) {
                 // Exact match on book name
                 $q->where('name', 'like', "%{$query}%")
-                  // Match on individual words
-                  ->orWhere(function($q) use ($queryWords) {
-                      foreach ($queryWords as $word) {
-                          $q->where('name', 'like', "%{$word}%");
-                      }
-                  })
-                  // Match on ISBN
-                  ->orWhere('isbn', 'like', "%{$query}%")
-                  // Match on description
-                  ->orWhere('description', 'like', "%{$query}%")
-                  // Match on author name
-                  ->orWhereHas('auther', function($q) use ($query, $queryWords) {
-                      $q->where('name', 'like', "%{$query}%");
-                      foreach ($queryWords as $word) {
-                          $q->orWhere('name', 'like', "%{$word}%");
-                      }
-                  });
+                    // Match on individual words
+                    ->orWhere(function ($q) use ($queryWords) {
+                        foreach ($queryWords as $word) {
+                            $q->where('name', 'like', "%{$word}%");
+                        }
+                    })
+                    // Match on ISBN
+                    ->orWhere('isbn', 'like', "%{$query}%")
+                    // Match on description
+                    ->orWhere('description', 'like', "%{$query}%")
+                    // Match on old single author (backward compatibility)
+                    ->orWhereHas('auther', function ($q) use ($query, $queryWords) {
+                        $q->where('name', 'like', "%{$query}%");
+                        foreach ($queryWords as $word) {
+                            $q->orWhere('name', 'like', "%{$word}%");
+                        }
+                    })
+                    // Match on multiple authors
+                    ->orWhereHas('authors', function ($q) use ($query, $queryWords) {
+                        $q->where('name', 'like', "%{$query}%");
+                        foreach ($queryWords as $word) {
+                            $q->orWhere('name', 'like', "%{$word}%");
+                        }
+                    });
             })
             ->get();
 
         // If no results, try fuzzy matching with similarity
         if ($books->isEmpty() && !empty($queryWords)) {
-            $allCSEBooks = book::with(['auther', 'category', 'publisher'])
+            $allCSEBooks = book::with(['auther', 'authors', 'category', 'publisher'])
                 ->whereIn('category_id', $cseCategories)
                 ->get();
 
@@ -275,13 +327,13 @@ class ChatBotController extends Controller
             foreach ($allCSEBooks as $book) {
                 $bookNameLower = strtolower($book->name);
                 $queryLower = strtolower($query);
-                
+
                 // Calculate similarity percentage
                 similar_text($bookNameLower, $queryLower, $similarity);
-                
+
                 // Check if query is contained in book name (exact substring match)
                 $containsQuery = stripos($bookNameLower, $queryLower) !== false;
-                
+
                 // Check if any query words appear in book name
                 $wordMatches = 0;
                 $totalWordScore = 0;
@@ -295,19 +347,23 @@ class ChatBotController extends Controller
                         }
                     }
                 }
-                
-                // Check author name too
+
+                // Check author name too (check all authors)
                 $authorMatch = false;
-                if ($book->auther) {
-                    $authorNameLower = strtolower($book->auther->name);
+                $allAuthors = $book->authors ?? collect();
+                if ($allAuthors->isEmpty() && $book->auther) {
+                    $allAuthors = collect([$book->auther]);
+                }
+                foreach ($allAuthors as $author) {
+                    $authorNameLower = strtolower($author->name);
                     foreach ($queryWords as $word) {
                         if (stripos($authorNameLower, strtolower(trim($word))) !== false) {
                             $authorMatch = true;
-                            break;
+                            break 2; // Break both loops
                         }
                     }
                 }
-                
+
                 // Scoring: exact match > word matches > similarity > author match
                 $score = 0;
                 if ($containsQuery) {
@@ -318,7 +374,7 @@ class ChatBotController extends Controller
                 if ($authorMatch) {
                     $score += 50;
                 }
-                
+
                 // If score is significant, include it
                 if ($score > 50 || $wordMatches > 0 || $similarity > 30) {
                     $matchedBooks[] = [
@@ -332,7 +388,7 @@ class ChatBotController extends Controller
             }
 
             // Sort by score (highest first)
-            usort($matchedBooks, function($a, $b) {
+            usort($matchedBooks, function ($a, $b) {
                 return $b['score'] <=> $a['score'];
             });
 
@@ -345,20 +401,37 @@ class ChatBotController extends Controller
         }
 
         // Sort books: available first, then by name
-        $books = $books->sortBy(function($book) {
+        $books = $books->sortBy(function ($book) {
             return [$book->available_quantity == 0, $book->name];
         });
 
         $response = "I found " . $books->count() . " CSE department book(s) for '{$query}':\n\n";
-        
+
         $booksData = [];
         foreach ($books as $book) {
             $availability = $book->available_quantity > 0 ? 'Available' : 'Not Available';
             $availabilityClass = $book->available_quantity > 0 ? 'success' : 'danger';
             $availabilityIcon = $book->available_quantity > 0 ? '✅' : '❌';
-            
+
+            // Get all authors
+            $allAuthors = $book->authors ?? collect();
+            if ($allAuthors->isEmpty() && $book->auther) {
+                $allAuthors = collect([$book->auther]);
+            }
+            $authorsList = $allAuthors->map(function ($author) {
+                $labels = [];
+                if ($author->pivot && $author->pivot->is_main_author) {
+                    $labels[] = 'Main';
+                }
+                if ($author->pivot && $author->pivot->is_corresponding_author) {
+                    $labels[] = 'Corresponding';
+                }
+                $label = !empty($labels) ? ' (' . implode(', ', $labels) . ')' : '';
+                return $author->name . $label;
+            })->join(', ');
+
             $response .= "{$availabilityIcon} <strong>" . $book->name . "</strong>\n";
-            $response .= "   👤 Author: " . ($book->auther ? $book->auther->name : 'N/A') . "\n";
+            $response .= "   👤 Author(s): " . ($authorsList ?: 'N/A') . "\n";
             $response .= "   📖 ISBN: " . ($book->isbn ?? 'N/A') . "\n";
             $response .= "   📚 Category: " . ($book->category ? $book->category->name : 'N/A') . "\n";
             $response .= "   📊 Status: <strong>" . $availability . "</strong>\n";
@@ -369,11 +442,11 @@ class ChatBotController extends Controller
                 $response .= "   ⚠️ Currently unavailable - You can reserve it\n";
             }
             $response .= "\n";
-            
+
             $booksData[] = [
                 'id' => $book->id,
                 'name' => $book->name,
-                'author' => $book->auther ? $book->auther->name : 'N/A',
+                'author' => $authorsList ?: 'N/A',
                 'isbn' => $book->isbn ?? 'N/A',
                 'category' => $book->category ? $book->category->name : 'N/A',
                 'available_quantity' => $book->available_quantity,

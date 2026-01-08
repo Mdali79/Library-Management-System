@@ -44,8 +44,25 @@
                                     </td>
                                     <td>
                                         <strong>{{ $request->book->name }}</strong><br>
-                                        @if($request->book->auther)
-                                            <small>By: {{ $request->book->auther->name }}</small>
+                                        @php
+                                            $bookAuthors = $request->book->authors ?? collect();
+                                            if ($bookAuthors->isEmpty() && $request->book->auther) {
+                                                $bookAuthors = collect([$request->book->auther]);
+                                            }
+                                        @endphp
+                                        @if($bookAuthors->count() > 0)
+                                            <small>By: 
+                                                @foreach($bookAuthors as $author)
+                                                    {{ $author->name }}
+                                                    @if($author->pivot->is_main_author ?? false)
+                                                        <span class="badge badge-primary badge-sm">Main</span>
+                                                    @endif
+                                                    @if($author->pivot->is_corresponding_author ?? false)
+                                                        <span class="badge badge-info badge-sm">Corresponding</span>
+                                                    @endif
+                                                    @if(!$loop->last), @endif
+                                                @endforeach
+                                            </small>
                                         @endif
                                     </td>
                                     <td>{{ $request->student->department ?? 'N/A' }}</td>

@@ -141,4 +141,9 @@ Route::middleware('auth')->group(function () {
     // Chatbot routes (Student/Teacher only)
     Route::get('/chatbot', [App\Http\Controllers\ChatBotController::class, 'index'])->name('chatbot.index');
     Route::post('/chatbot/chat', [App\Http\Controllers\ChatBotController::class, 'chat'])->name('chatbot.chat');
+
+    // Profile routes
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 });

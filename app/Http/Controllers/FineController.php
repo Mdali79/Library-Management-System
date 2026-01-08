@@ -20,8 +20,8 @@ class FineController extends Controller
 
         $query = Fine::with(['bookIssue.book', 'student', 'user']);
 
-        // Students/Teachers see only their own fines
-        if (in_array($role, ['Student', 'Teacher'])) {
+        // Students see only their own fines
+        if ($role === 'Student') {
             $student = \App\Models\student::where('user_id', $user->id)->first();
             if ($student) {
                 $query->where('student_id', $student->id);
@@ -34,12 +34,12 @@ class FineController extends Controller
             $query->where('status', $request->status);
         }
 
-        if ($request->filled('student_id') && in_array($role, ['Admin', 'Librarian'])) {
+        if ($request->filled('student_id') && $role === 'Admin') {
             $query->where('student_id', $request->student_id);
         }
 
         // Calculate statistics based on role
-        if (in_array($role, ['Student', 'Teacher'])) {
+        if ($role === 'Student') {
             $student = \App\Models\student::where('user_id', $user->id)->first();
             $pendingFines = $student ? Fine::where('student_id', $student->id)->where('status', 'pending')->sum('amount') : 0;
             $totalFines = $student ? Fine::where('student_id', $student->id)->sum('amount') : 0;
@@ -118,8 +118,8 @@ class FineController extends Controller
             return redirect()->back()->withErrors(['error' => 'Fine already paid.']);
         }
 
-        // Students/Teachers can only pay their own fines
-        if (in_array($role, ['Student', 'Teacher'])) {
+        // Students can only pay their own fines
+        if ($role === 'Student') {
             $student = \App\Models\student::where('user_id', $user->id)->first();
             if (!$student || $fine->student_id != $student->id) {
                 return redirect()->back()->withErrors(['error' => 'You can only pay your own fines.']);
@@ -129,7 +129,7 @@ class FineController extends Controller
         $fine->status = 'paid';
         $fine->payment_method = $request->payment_method;
         $fine->paid_at = Carbon::now();
-        $fine->notes = ($fine->notes ?? '') . ' | Paid by ' . ($role == 'Student' || $role == 'Teacher' ? 'student' : $role);
+        $fine->notes = ($fine->notes ?? '') . ' | Paid by ' . ($role === 'Student' ? 'student' : $role);
         $fine->save();
 
         return redirect()->back()->with('success', 'Fine paid successfully.');
@@ -143,8 +143,8 @@ class FineController extends Controller
         $user = auth()->user();
         $role = $user->role;
 
-        // Only Admin and Librarian can calculate overdue fines
-        if (!in_array($role, ['Admin', 'Librarian'])) {
+        // Only Admin can calculate overdue fines
+        if ($role !== 'Admin') {
             return redirect()->back()->withErrors(['error' => 'You do not have permission to calculate overdue fines.']);
         }
 
@@ -196,8 +196,8 @@ class FineController extends Controller
         $user = auth()->user();
         $role = $user->role;
 
-        // Only Admin and Librarian can waive fines
-        if (!in_array($role, ['Admin', 'Librarian'])) {
+        // Only Admin can waive fines
+        if ($role !== 'Admin') {
             return redirect()->back()->withErrors(['error' => 'You do not have permission to waive fines.']);
         }
 

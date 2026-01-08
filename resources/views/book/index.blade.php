@@ -29,16 +29,17 @@
                             <form method="GET" action="{{ route('books') }}">
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <div class="form-group">
+                                        <div class="form-group" style="position: relative;">
                                             <label>Search (Name/ISBN/Author)</label>
-                                            <input type="text" name="search" class="form-control" 
-                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search...">
+                                            <input type="text" name="search" id="book-search-input" class="form-control" 
+                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off">
+                                            <div id="book-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Category</label>
-                                            <select name="category" class="form-control search-select">
+                                            <select name="category" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
                                                 <option value="">All Categories</option>
                                                 @foreach($categories as $cat)
                                                     <option value="{{ $cat->id }}" 
@@ -52,7 +53,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Author</label>
-                                            <select name="author" class="form-control search-select">
+                                            <select name="author" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
                                                 <option value="">All Authors</option>
                                                 @foreach($authors as $auth)
                                                     <option value="{{ $auth->id }}" 
@@ -66,7 +67,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Publisher</label>
-                                            <select name="publisher" class="form-control search-select">
+                                            <select name="publisher" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
                                                 <option value="">All Publishers</option>
                                                 @foreach($publishers as $pub)
                                                     <option value="{{ $pub->id }}" 
@@ -80,7 +81,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Status</label>
-                                            <select name="status" class="form-control search-select">
+                                            <select name="status" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
                                                 <option value="">All Status</option>
                                                 <option value="available" {{ ($filters['status'] ?? '') == 'available' ? 'selected' : '' }}>Available</option>
                                                 <option value="unavailable" {{ ($filters['status'] ?? '') == 'unavailable' ? 'selected' : '' }}>Unavailable</option>
@@ -136,7 +137,37 @@
                                     <td>{{ $book->name }}</td>
                                     <td>{{ $book->isbn ?? 'N/A' }}</td>
                                     <td>{{ $book->category->name }}</td>
-                                    <td>{{ $book->auther->name }}</td>
+                                    <td>
+                                        @php
+                                            $bookAuthors = $book->authors ?? collect();
+                                            if ($bookAuthors->isEmpty() && $book->auther) {
+                                                // Fallback to old single author for backward compatibility
+                                                $bookAuthors = collect([$book->auther]);
+                                            }
+                                        @endphp
+                                        @if($bookAuthors->count() > 0)
+                                            @foreach($bookAuthors as $index => $author)
+                                                @php
+                                                    $isMain = $author->pivot->is_main_author ?? false;
+                                                    $isCorresponding = $author->pivot->is_corresponding_author ?? false;
+                                                @endphp
+                                                <span>
+                                                    {{ $author->name }}
+                                                    @if($isMain)
+                                                        <span class="badge badge-primary">Main</span>
+                                                    @endif
+                                                    @if($isCorresponding)
+                                                        <span class="badge badge-info">Corresponding</span>
+                                                    @endif
+                                                </span>
+                                                @if(!$loop->last)
+                                                    <br>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $book->publisher->name }}</td>
                                     <td>
                                         <small>Total: {{ $book->total_quantity ?? 1 }}</small><br>
@@ -172,4 +203,117 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .suggestions-dropdown {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Additional inline styles to ensure dropdown text is fully visible */
+        .search-select,
+        select.search-select,
+        select.form-control.search-select,
+        .form-group select.search-select {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            padding-right: 5rem !important;
+            padding-left: 1rem !important;
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            min-height: 2.75rem !important;
+            height: auto !important;
+            line-height: 1.5 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            background-position: right 0.75rem center !important;
+            font-size: 1rem !important;
+            text-indent: 0 !important;
+        }
+        
+        .search-select:focus,
+        .search-select:active,
+        .search-select:hover,
+        select.search-select:focus,
+        select.search-select:active,
+        select.search-select:hover {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            padding-right: 5rem !important;
+        }
+    </style>
+
+    <script>
+        const bookSearchInput = document.getElementById('book-search-input');
+        const bookSuggestionsDiv = document.getElementById('book-suggestions');
+        const bookSuggestions = @json($suggestions ?? []);
+        
+        bookSearchInput.addEventListener('focus', function() {
+            if (bookSuggestions.length > 0) {
+                showBookSuggestions();
+            }
+        });
+        
+        bookSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            if (searchTerm.length > 0) {
+                const filtered = bookSuggestions.filter(s => s.toLowerCase().includes(searchTerm));
+                if (filtered.length > 0) {
+                    displayBookSuggestions(filtered);
+                } else {
+                    bookSuggestionsDiv.style.display = 'none';
+                }
+            } else {
+                showBookSuggestions();
+            }
+        });
+        
+        function showBookSuggestions() {
+            displayBookSuggestions(bookSuggestions);
+        }
+        
+        function displayBookSuggestions(items) {
+            bookSuggestionsDiv.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.textContent = item;
+                div.addEventListener('click', function() {
+                    bookSearchInput.value = item;
+                    bookSuggestionsDiv.style.display = 'none';
+                    document.querySelector('form[method="GET"]').submit();
+                });
+                bookSuggestionsDiv.appendChild(div);
+            });
+            bookSuggestionsDiv.style.display = 'block';
+        }
+        
+        document.addEventListener('click', function(e) {
+            if (!bookSearchInput.contains(e.target) && !bookSuggestionsDiv.contains(e.target)) {
+                bookSuggestionsDiv.style.display = 'none';
+            }
+        });
+    </script>
 @endsection

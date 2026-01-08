@@ -23,7 +23,7 @@ class dashboardController extends Controller
         $role = $user->role ?? 'Admin';
 
         // Common metrics - filtered by role
-        if (in_array($role, ['Student', 'Teacher'])) {
+        if ($role === 'Student') {
             $studentRecord = student::where('user_id', $user->id)->first();
             $totalBooks = book::count(); // Students can see total books
             $totalMembers = 0; // Students don't see member count
@@ -80,8 +80,8 @@ class dashboardController extends Controller
             'role' => $role,
         ];
 
-        // Student/Teacher/Librarian specific data
-        if (in_array($role, ['Student', 'Teacher', 'Librarian'])) {
+        // Student specific data
+        if ($role === 'Student') {
             $studentRecord = student::where('user_id', $user->id)->first();
             
             if ($studentRecord) {
@@ -111,8 +111,8 @@ class dashboardController extends Controller
             }
         }
 
-        // Admin/Librarian specific data
-        if (in_array($role, ['Admin', 'Librarian'])) {
+        // Admin specific data
+        if ($role === 'Admin') {
             $data['overdue_books'] = book_issue::where('issue_status', 'N')
                 ->where('request_status', 'issued')
                 ->where('return_date', '<', Carbon::now())
@@ -124,8 +124,8 @@ class dashboardController extends Controller
                 ->count();
         }
 
-        // Librarian/Admin specific - pending book requests
-        if (in_array($role, ['Librarian', 'Admin'])) {
+        // Admin specific - pending book requests
+        if ($role === 'Admin') {
             $data['pending_book_requests'] = book_issue::where('request_status', 'pending')
                 ->with(['book', 'student.user'])
                 ->count();
@@ -134,6 +134,13 @@ class dashboardController extends Controller
             $data['pending_registrations'] = \App\Models\User::where('registration_status', 'pending')
                 ->count();
         }
+
+        // Get search suggestions for dashboard
+        $searchSuggestions = [];
+        $bookSuggestions = book::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
+        $authorSuggestions = auther::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
+        $categorySuggestions = category::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
+        $data['search_suggestions'] = array_merge($bookSuggestions, $authorSuggestions, $categorySuggestions);
 
         return view('dashboard', $data);
     }

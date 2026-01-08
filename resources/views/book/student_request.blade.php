@@ -45,10 +45,17 @@
                             <select class="form-control" name="book_id" required>
                                 <option value="">Select Book</option>
                                 @foreach ($books as $book)
+                                    @php
+                                        $bookAuthors = $book->authors ?? collect();
+                                        if ($bookAuthors->isEmpty() && $book->auther) {
+                                            $bookAuthors = collect([$book->auther]);
+                                        }
+                                        $authorsText = $bookAuthors->pluck('name')->join(', ');
+                                    @endphp
                                     <option value='{{ $book->id }}' {{ old('book_id') == $book->id ? 'selected' : '' }}>
                                         {{ $book->name }} 
-                                        @if($book->auther)
-                                            - {{ $book->auther->name }}
+                                        @if($authorsText)
+                                            - {{ $authorsText }}
                                         @endif
                                         @if($book->available_quantity > 0)
                                             (Available: {{ $book->available_quantity }})

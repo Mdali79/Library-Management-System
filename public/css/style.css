@@ -396,17 +396,29 @@ ul {
 }
 
 .form-group select.form-control {
-    overflow: visible;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding-right: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding-right: 5rem !important; /* Even more padding to make space for arrow */
+    padding-left: 1rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 2.75rem !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath fill='%23333' d='M7 10L2 5h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 12px;
+    background-position: right 0.75rem center !important; /* Adjusted arrow position */
+    background-size: 14px;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
+    font-size: 1rem !important;
+    text-indent: 0 !important;
 }
 
 .form-group .form-control:focus {
@@ -419,55 +431,77 @@ ul {
     color: var(--text-light);
 }
 
-/* Select dropdown improvements */
-select.form-control option {
-    padding: 0.5rem;
-    white-space: normal;
-    word-wrap: break-word;
+/* Select dropdown improvements - ensure full text visibility */
+select.form-control {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding-right: 4.5rem !important;
+    padding-left: 1rem !important;
+    min-height: 2.5rem !important;
+    box-sizing: border-box !important;
 }
 
-select.form-control {
-    min-width: 100%;
-    max-width: 100%;
+select.form-control option {
+    padding: 0.5rem 0.75rem !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
     overflow: visible !important;
 }
 
-/* Ensure select dropdown text is fully visible */
-select.form-control option {
-    padding: 0.5rem;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow: visible;
-}
-
-/* Fix for select dropdown display */
-select.form-control {
-    text-overflow: clip;
-    overflow: visible;
-}
-
 /* Make sure dropdown shows full text when selected */
-.form-group select.form-control:focus {
-    overflow: visible;
-    text-overflow: clip;
+.form-group select.form-control:focus,
+.form-group select.form-control:active,
+.form-group select.form-control:hover {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    padding-right: 4.5rem !important;
 }
 
-/* Specific styling for search form selects */
-.search-select {
+/* Specific styling for search form selects - ensure full text visibility */
+.search-select,
+.form-control.search-select,
+select.search-select,
+select.form-control.search-select {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
     overflow: visible !important;
     text-overflow: clip !important;
-    white-space: nowrap;
-    padding-right: 2.5rem;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding-right: 5rem !important; /* Even more padding for arrow */
+    padding-left: 1rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 2.75rem !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    box-sizing: border-box !important;
+    background-position: right 0.75rem center !important;
+    background-size: 14px !important;
+    font-size: 1rem !important;
+    text-indent: 0 !important;
 }
 
 .search-select option {
-    padding: 0.75rem 1rem;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow: visible;
+    padding: 0.75rem 1rem !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow: visible !important;
+}
+
+.search-select:focus,
+.search-select:active,
+.search-select:hover {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    padding-right: 4.5rem !important;
 }
 
 .form-text {
@@ -852,6 +886,62 @@ html {
 /* ============================================
    ADDITIONAL MODERN ENHANCEMENTS
    ============================================ */
+
+/* Global fix for all select elements - ensure text is fully visible */
+select,
+select.form-control,
+select[class*="form-control"],
+.yourform select,
+#wrapper-admin select,
+.registration-step select,
+.form-group select,
+#step1 select,
+#step2 select,
+#step3 select,
+#step4 select,
+.search-select,
+select[class*="search-select"] {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    text-align: left !important;
+    padding-right: 5rem !important;
+    padding-left: 1rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 2.75rem !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background-position: right 0.75rem center !important;
+    font-size: 1rem !important;
+    text-indent: 0 !important;
+}
+
+/* Ensure dropdown options are fully visible */
+select option {
+    padding: 0.5rem 0.75rem !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow: visible !important;
+}
+
+/* Fix for all states */
+select:focus,
+select:active,
+select:hover,
+select.form-control:focus,
+select.form-control:active,
+select.form-control:hover {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    padding-right: 4.5rem !important;
+    background-position: right 0.5rem center !important;
+}
 
 /* Input Focus Effects */
 input[type="text"]:focus,

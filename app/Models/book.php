@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class book extends Model
@@ -66,5 +67,49 @@ class book extends Model
     public function reservations()
     {
         return $this->hasMany(BookReservation::class);
+    }
+
+    /**
+     * Get all authors for this book (many-to-many relationship)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function authors(): BelongsToMany
+    {
+        // Check which column exists in the table
+        $columns = \Schema::getColumnListing('book_authors');
+        $foreignKey = in_array('auther_id', $columns) ? 'auther_id' : 'author_id';
+        
+        $relation = $this->belongsToMany(auther::class, 'book_authors', 'book_id', $foreignKey)
+            ->withTimestamps();
+        
+        // Add pivot columns if they exist
+        if (in_array('is_main_author', $columns) && in_array('is_corresponding_author', $columns)) {
+            $relation->withPivot('is_main_author', 'is_corresponding_author');
+        } elseif (in_array('author_type', $columns)) {
+            $relation->withPivot('author_type', 'order');
+        }
+        
+        return $relation;
+    }
+
+    /**
+     * Get the main author for this book
+     *
+     * @return \App\Models\auther|null
+     */
+    public function getMainAuthor()
+    {
+        return $this->authors()->wherePivot('is_main_author', true)->first();
+    }
+
+    /**
+     * Get the corresponding author for this book
+     *
+     * @return \App\Models\auther|null
+     */
+    public function getCorrespondingAuthor()
+    {
+        return $this->authors()->wherePivot('is_corresponding_author', true)->first();
     }
 }

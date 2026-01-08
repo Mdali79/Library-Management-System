@@ -20,7 +20,7 @@ class BookController extends Controller
      */
     public function index(Request $request)
     {
-        $query = book::with(['auther', 'category', 'publisher']);
+        $query = book::with(['auther', 'authors', 'category', 'publisher']);
 
         // Advanced search filters
         if ($request->filled('search')) {
@@ -32,6 +32,9 @@ class BookController extends Controller
                   ->orWhereHas('auther', function($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   })
+                  ->orWhereHas('authors', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('publisher', function($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
                   });
@@ -39,7 +42,12 @@ class BookController extends Controller
         }
 
         if ($request->filled('author')) {
-            $query->where('auther_id', $request->author);
+            $query->where(function($q) use ($request) {
+                $q->where('auther_id', $request->author)
+                  ->orWhereHas('authors', function($q2) use ($request) {
+                      $q2->where('authers.id', $request->author);
+                  });
+            });
         }
 
         if ($request->filled('isbn')) {
@@ -70,12 +78,43 @@ class BookController extends Controller
             }
         }
 
+        // Get keyword suggestions for search
+        $suggestions = [];
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            // Get book name suggestions
+            $bookSuggestions = book::where('name', 'like', "%{$searchTerm}%")
+                ->limit(5)
+                ->pluck('name')
+                ->toArray();
+            // Get author name suggestions
+            $authorSuggestions = auther::where('name', 'like', "%{$searchTerm}%")
+                ->limit(5)
+                ->pluck('name')
+                ->toArray();
+            // Get ISBN suggestions
+            $isbnSuggestions = book::where('isbn', 'like', "%{$searchTerm}%")
+                ->limit(5)
+                ->pluck('isbn')
+                ->filter()
+                ->toArray();
+            
+            $suggestions = array_merge($bookSuggestions, $authorSuggestions, $isbnSuggestions);
+            $suggestions = array_unique(array_slice($suggestions, 0, 10));
+        } else {
+            // Get popular suggestions
+            $bookSuggestions = book::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
+            $authorSuggestions = auther::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
+            $suggestions = array_merge($bookSuggestions, $authorSuggestions);
+        }
+        
         return view('book.index', [
             'books' => $query->latest()->paginate(10),
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
             'categories' => category::latest()->get(),
             'filters' => $request->all(),
+            'suggestions' => $suggestions,
         ]);
     }
 
@@ -103,6 +142,24 @@ class BookController extends Controller
     {
         $data = $request->validated();
         
+        // Extract authors data before creating book
+        $authorsData = $data['authors'] ?? [];
+        unset($data['authors']);
+        
+        // Get main_author index from radio button and ensure it's set
+        $mainAuthorIndex = $request->input('main_author');
+        if (!empty($mainAuthorIndex) && isset($authorsData[$mainAuthorIndex])) {
+            $authorsData[$mainAuthorIndex]['is_main'] = '1';
+        } else {
+            // Fallback: find first author with is_main set
+            foreach ($authorsData as $index => &$author) {
+                if (isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1)) {
+                    $author['is_main'] = '1';
+                    break;
+                }
+            }
+        }
+        
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $image = $request->file('cover_image');
@@ -117,7 +174,29 @@ class BookController extends Controller
         $data['issued_quantity'] = 0;
         $data['status'] = 'Y';
 
-        book::create($data);
+        // Set auther_id for backward compatibility (use first main author or first author)
+        $mainAuthor = collect($authorsData)->first(function($author) {
+            return isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1);
+        });
+        $firstAuthor = $mainAuthor ?? ($authorsData[0] ?? null);
+        if ($firstAuthor && isset($firstAuthor['id'])) {
+            $data['auther_id'] = $firstAuthor['id'];
+        }
+
+        $book = book::create($data);
+        
+        // Sync authors to pivot table
+        $syncData = [];
+        foreach ($authorsData as $author) {
+            if (isset($author['id']) && !empty($author['id'])) {
+                $syncData[$author['id']] = [
+                    'is_main_author' => isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1),
+                    'is_corresponding_author' => isset($author['is_corresponding']) && (!empty($author['is_corresponding']) || $author['is_corresponding'] === '1' || $author['is_corresponding'] === 1),
+                ];
+            }
+        }
+        $book->authors()->sync($syncData);
+        
         return redirect()->route('books')->with('success', 'Book added successfully');
     }
 
@@ -130,6 +209,9 @@ class BookController extends Controller
      */
     public function edit(book $book)
     {
+        // Load existing authors with their roles
+        $book->load('authors');
+        
         return view('book.edit',[
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
@@ -150,6 +232,10 @@ class BookController extends Controller
         $book = book::find($id);
         $data = $request->validated();
         
+        // Extract authors data before updating book
+        $authorsData = $data['authors'] ?? [];
+        unset($data['authors']);
+        
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             // Delete old image if exists
@@ -167,7 +253,43 @@ class BookController extends Controller
             $data['available_quantity'] = max(0, $data['total_quantity'] - $book->issued_quantity);
         }
 
+        // Get main_author index from radio button and ensure it's set
+        $mainAuthorIndex = $request->input('main_author');
+        if (!empty($mainAuthorIndex) && isset($authorsData[$mainAuthorIndex])) {
+            $authorsData[$mainAuthorIndex]['is_main'] = '1';
+        } else {
+            // Fallback: find first author with is_main set
+            foreach ($authorsData as $index => &$author) {
+                if (isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1)) {
+                    $author['is_main'] = '1';
+                    break;
+                }
+            }
+        }
+
+        // Set auther_id for backward compatibility (use first main author or first author)
+        $mainAuthor = collect($authorsData)->first(function($author) {
+            return isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1 || $author['is_main'] === true);
+        });
+        $firstAuthor = $mainAuthor ?? ($authorsData[0] ?? null);
+        if ($firstAuthor && isset($firstAuthor['id'])) {
+            $data['auther_id'] = $firstAuthor['id'];
+        }
+
         $book->update($data);
+        
+        // Sync authors to pivot table
+        $syncData = [];
+        foreach ($authorsData as $author) {
+            if (isset($author['id']) && !empty($author['id'])) {
+                $syncData[$author['id']] = [
+                    'is_main_author' => isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1 || $author['is_main'] === true),
+                    'is_corresponding_author' => isset($author['is_corresponding']) && (!empty($author['is_corresponding']) || $author['is_corresponding'] === '1' || $author['is_corresponding'] === 1 || $author['is_corresponding'] === true),
+                ];
+            }
+        }
+        $book->authors()->sync($syncData);
+        
         return redirect()->route('books')->with('success', 'Book updated successfully');
     }
 

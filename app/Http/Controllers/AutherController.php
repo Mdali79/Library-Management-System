@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\auther;
 use App\Http\Requests\StoreautherRequest;
 use App\Http\Requests\UpdateautherRequest;
+use Illuminate\Http\Request;
 
 class AutherController extends Controller
 {
@@ -13,10 +14,35 @@ class AutherController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
+        $query = auther::query();
+        
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', "%{$search}%");
+        }
+        
+        // Get suggestions for keyword suggestions
+        $suggestions = [];
+        if ($request->filled('search')) {
+            $suggestions = auther::where('name', 'like', "%{$request->search}%")
+                ->limit(10)
+                ->pluck('name')
+                ->toArray();
+        } else {
+            // Get popular author names for initial suggestions
+            $suggestions = auther::orderBy('id', 'desc')
+                ->limit(10)
+                ->pluck('name')
+                ->toArray();
+        }
+        
         return view('auther.index', [
-            'authors' => auther::Paginate(5)
+            'authors' => $query->latest()->paginate(5),
+            'filters' => $request->all(),
+            'suggestions' => $suggestions
         ]);
     }
 

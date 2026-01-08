@@ -12,6 +12,20 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
+                            <i class="fas fa-check-circle"></i> {{ session('success') }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <script>
+                            // Show popup alert
+                            setTimeout(function() {
+                                alert('{{ session('success') }}');
+                            }, 100);
+                        </script>
+                    @endif
                     <div class="message"></div>
                     <table class="content-table">
                         <thead>

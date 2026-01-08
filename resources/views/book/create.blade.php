@@ -59,16 +59,51 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>Author <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('auther_id') is-invalid @enderror" name="auther_id" required>
-                                        <option value="">Select Author</option>
-                                        @foreach ($authors as $author)
-                                            <option value='{{ $author->id }}' {{ old('auther_id') == $author->id ? 'selected' : '' }}>
-                                                {{ $author->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('auther_id')
+                                    <label>Authors <span class="text-danger">*</span></label>
+                                    <div id="authors-container">
+                                        <div class="author-row mb-3" data-row-index="0">
+                                            <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
+                                                <div class="card-body p-3">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-12 mb-2">
+                                                            <label class="small text-muted mb-1">Author</label>
+                                                            <select class="form-control author-select" name="authors[0][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
+                                                                <option value="">Select Author</option>
+                                                                @foreach ($authors as $author)
+                                                                    <option value="{{ $author->id }}">{{ $author->name }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input main-author-radio" type="radio" name="main_author" value="0" id="main_author_0" checked>
+                                                                <label class="form-check-label" for="main_author_0">
+                                                                    <i class="fas fa-star text-warning"></i> Main Author
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[0][is_corresponding]" value="1" id="corresponding_0">
+                                                                <label class="form-check-label" for="corresponding_0">
+                                                                    <i class="fas fa-envelope text-info"></i> Corresponding
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-secondary mt-2" id="add-author-btn">
+                                        <i class="fas fa-plus"></i> Add Another Author
+                                    </button>
+                                    @error('authors')
+                                        <div class="alert alert-danger" role="alert">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                    @error('authors.*')
                                         <div class="alert alert-danger" role="alert">
                                             {{ $message }}
                                         </div>
@@ -165,4 +200,232 @@
             </div>
         </div>
     </div>
+
+    <script>
+        let authorRowIndex = 1;
+        const allAuthors = @json($authors);
+
+        document.getElementById('add-author-btn').addEventListener('click', function() {
+            const container = document.getElementById('authors-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'author-row mb-3 p-3 border rounded';
+            newRow.setAttribute('data-row-index', authorRowIndex);
+            
+            newRow.innerHTML = `
+                <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-12 mb-2">
+                                <label class="small text-muted mb-1">Author</label>
+                                <select class="form-control author-select" name="authors[${authorRowIndex}][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
+                                    <option value="">Select Author</option>
+                                    ${allAuthors.map(author => `<option value="${author.id}">${author.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input main-author-radio" type="radio" name="main_author" value="${authorRowIndex}" id="main_author_${authorRowIndex}">
+                                    <label class="form-check-label" for="main_author_${authorRowIndex}">
+                                        <i class="fas fa-star text-warning"></i> Main Author
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-check">
+                                    <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[${authorRowIndex}][is_corresponding]" value="1" id="corresponding_${authorRowIndex}">
+                                    <label class="form-check-label" for="corresponding_${authorRowIndex}">
+                                        <i class="fas fa-envelope text-info"></i> Corresponding
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-1 text-right">
+                                <button type="button" class="btn btn-sm btn-danger remove-author-btn" onclick="removeAuthorRow(this)" title="Remove Author">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(newRow);
+            updateAuthorOptions();
+            authorRowIndex++;
+        });
+
+        function removeAuthorRow(btn) {
+            const row = btn.closest('.author-row');
+            const rowIndex = row.getAttribute('data-row-index');
+            
+            // Check if this is the main author
+            const isMainAuthor = row.querySelector('.main-author-radio').checked;
+            
+            // If removing main author, set first remaining author as main
+            if (isMainAuthor) {
+                const remainingRows = document.querySelectorAll('.author-row');
+                if (remainingRows.length > 1) {
+                    remainingRows[0].querySelector('.main-author-radio').checked = true;
+                }
+            }
+            
+            row.remove();
+            updateAuthorOptions();
+        }
+
+        function updateAuthorOptions() {
+            const rows = document.querySelectorAll('.author-row');
+            const selectedAuthors = [];
+            
+            rows.forEach(row => {
+                const select = row.querySelector('.author-select');
+                if (select.value) {
+                    selectedAuthors.push(select.value);
+                }
+            });
+            
+            rows.forEach(row => {
+                const select = row.querySelector('.author-select');
+                const currentValue = select.value;
+                const options = select.querySelectorAll('option');
+                
+                options.forEach(option => {
+                    if (option.value === '' || option.value === currentValue) {
+                        option.style.display = '';
+                    } else if (selectedAuthors.includes(option.value)) {
+                        option.style.display = 'none';
+                    } else {
+                        option.style.display = '';
+                    }
+                });
+            });
+        }
+
+        // Update author options when selection changes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('author-select')) {
+                updateAuthorOptions();
+            }
+        });
+
+        // Ensure only one main author is selected
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('main-author-radio') && e.target.checked) {
+                document.querySelectorAll('.main-author-radio').forEach(radio => {
+                    if (radio !== e.target) {
+                        radio.checked = false;
+                    }
+                });
+            }
+        });
+
+        // Ensure only one corresponding author is selected
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('corresponding-author-checkbox') && e.target.checked) {
+                document.querySelectorAll('.corresponding-author-checkbox').forEach(checkbox => {
+                    if (checkbox !== e.target) {
+                        checkbox.checked = false;
+                    }
+                });
+            }
+        });
+
+        // Before form submission, set hidden fields for main author and ensure all data is correct
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // Remove any existing hidden inputs to avoid duplicates
+            document.querySelectorAll('input[name*="[is_main]"]').forEach(input => {
+                if (input.type === 'hidden') {
+                    input.remove();
+                }
+            });
+            
+            const mainAuthorRadio = document.querySelector('.main-author-radio:checked');
+            if (mainAuthorRadio) {
+                const mainIndex = mainAuthorRadio.value;
+                const mainRow = document.querySelector(`.author-row[data-row-index="${mainIndex}"]`);
+                if (mainRow) {
+                    // Check if author is selected
+                    const authorSelect = mainRow.querySelector('.author-select');
+                    if (authorSelect && authorSelect.value) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = `authors[${mainIndex}][is_main]`;
+                        hiddenInput.value = '1';
+                        mainRow.appendChild(hiddenInput);
+                    } else {
+                        e.preventDefault();
+                        alert('Please select an author for the Main Author field.');
+                        authorSelect.focus();
+                        return false;
+                    }
+                } else {
+                    e.preventDefault();
+                    alert('Please ensure at least one author is marked as Main Author.');
+                    return false;
+                }
+            } else {
+                e.preventDefault();
+                alert('Please select at least one Main Author.');
+                return false;
+            }
+            
+            // Ensure all authors have IDs
+            const allAuthorRows = document.querySelectorAll('.author-row');
+            let hasError = false;
+            allAuthorRows.forEach(row => {
+                const select = row.querySelector('.author-select');
+                if (!select || !select.value) {
+                    hasError = true;
+                    select.classList.add('is-invalid');
+                }
+            });
+            
+            if (hasError) {
+                e.preventDefault();
+                alert('Please select an author for all author fields.');
+                return false;
+            }
+        });
+    </script>
+    
+    <style>
+        .author-row {
+            margin-bottom: 1rem;
+        }
+        .author-row .card {
+            transition: all 0.3s ease;
+        }
+        .author-row .card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #2563eb !important;
+        }
+        .author-row .form-check {
+            margin-bottom: 0;
+            padding: 0.5rem 0;
+        }
+        .author-row .form-check-label {
+            font-size: 0.9rem;
+            white-space: nowrap;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .author-row .form-check-input {
+            margin-top: 0.25rem;
+        }
+        .author-select {
+            overflow: visible !important;
+            text-overflow: clip !important;
+            white-space: normal !important;
+            padding-right: 4.5rem !important;
+            min-height: 2.5rem !important;
+        }
+        #authors-container {
+            margin-bottom: 1rem;
+        }
+        .remove-author-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
 @endsection
