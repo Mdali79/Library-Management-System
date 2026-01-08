@@ -137,4 +137,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/reservations/cancel/{id}', [App\Http\Controllers\BookReservationController::class, 'cancel'])->name('reservations.cancel');
     Route::post('/reservations/notify/{bookId}', [App\Http\Controllers\BookReservationController::class, 'notifyAvailable'])->name('reservations.notify');
     Route::post('/reservations/mark-issued/{id}', [App\Http\Controllers\BookReservationController::class, 'markAsIssued'])->name('reservations.mark_issued');
+
+    // Chatbot routes (Student/Teacher only)
+    Route::get('/chatbot', [App\Http\Controllers\ChatBotController::class, 'index'])->name('chatbot.index');
+    Route::post('/chatbot/chat', [App\Http\Controllers\ChatBotController::class, 'chat'])->name('chatbot.chat');
 });

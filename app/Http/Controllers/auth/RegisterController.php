@@ -37,19 +37,34 @@ class RegisterController extends Controller
 
         // Student/Teacher require student-specific fields
         if (in_array($request->role, ['Student', 'Teacher'])) {
-            $rules['department'] = 'required|string|max:255';
+            $rules['department'] = 'required|string|max:255|not_in:Select Department';
             $rules['batch'] = 'required|string|max:50';
             $rules['roll'] = 'required|string|max:50';
             $rules['reg_no'] = 'required|string|unique:users';
+            // Admin department should not be submitted for Student/Teacher
+            $rules['admin_department'] = 'nullable';
         } else {
-            // Admin/Librarian - these fields are optional
-            $rules['department'] = 'nullable|string|max:255';
+            // Admin/Librarian - use admin_department instead
+            $rules['admin_department'] = 'nullable|string|max:255';
+            $rules['department'] = 'nullable|string|max:255'; // Ignore student department field
             $rules['batch'] = 'nullable|string|max:50';
             $rules['roll'] = 'nullable|string|max:50';
             $rules['reg_no'] = 'nullable|string|unique:users';
         }
 
         $validator = Validator::make($request->all(), $rules);
+
+        // Custom validation message for department
+        $validator->after(function ($validator) use ($request) {
+            if (in_array($request->role, ['Student', 'Teacher'])) {
+                // Get department value - should come from the dropdown
+                $department = $request->input('department');
+                // Check if it's empty, null, or the placeholder value
+                if (empty($department) || $department === '' || $department === null || trim($department) === '' || $department === 'Select Department') {
+                    $validator->errors()->add('department', 'The department field is required. Please select a department from the dropdown.');
+                }
+            }
+        });
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -83,13 +98,15 @@ class RegisterController extends Controller
         // Add role-specific fields
         if (in_array($request->role, ['Student', 'Teacher'])) {
             // Student/Teacher - all fields required
+            // Use department field (from dropdown), ignore admin_department
             $userData['department'] = $request->department;
             $userData['batch'] = $request->batch;
             $userData['roll'] = $request->roll;
             $userData['reg_no'] = $request->reg_no;
         } else {
-            // Admin/Librarian - only department is optional, others should be null
-            $userData['department'] = $request->department ?: null;
+            // Admin/Librarian - use admin_department if provided, otherwise null
+            // Ignore the student department field
+            $userData['department'] = $request->admin_department ?: null;
             $userData['batch'] = null;
             $userData['roll'] = null;
             $userData['reg_no'] = null;

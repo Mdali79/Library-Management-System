@@ -71,6 +71,7 @@
                         @endif
                         @if(in_array(auth()->user()->role, ['Student', 'Teacher']))
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
+                            <li><a href="{{ route('chatbot.index') }}"><i class="fas fa-robot"></i> Chatbot</a></li>
                         @endif
                         <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                         @if(auth()->user()->role == 'Admin' || auth()->user()->role == 'Librarian')
