@@ -75,6 +75,7 @@
                         @if(auth()->user()->role == 'Student')
                             <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
                             <li><a href="{{ route('chatbot.index') }}"><i class="fas fa-robot"></i> Chatbot</a></li>
+                            <li><a href="{{ route('reading.index') }}"><i class="fas fa-book-reader"></i> Read Books Online</a></li>
                         @endif
                         <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                         @if(auth()->user()->role == 'Admin')

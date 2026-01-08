@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class book extends Model
 {
@@ -24,6 +25,8 @@ class book extends Model
         'publication_year',
         'description',
         'cover_image',
+        'pdf_file',
+        'preview_pages',
         'total_quantity',
         'available_quantity',
         'issued_quantity',
@@ -111,5 +114,62 @@ class book extends Model
     public function getCorrespondingAuthor()
     {
         return $this->authors()->wherePivot('is_corresponding_author', true)->first();
+    }
+
+    /**
+     * Check if book has PDF file available
+     *
+     * @return bool
+     */
+    public function hasPdfFile()
+    {
+        return !empty($this->pdf_file) && Storage::disk('public')->exists($this->pdf_file);
+    }
+
+    /**
+     * Check if book belongs to CSE category
+     *
+     * @return bool
+     */
+    public function isCSEBook()
+    {
+        if (!$this->category) {
+            return false;
+        }
+
+        $cseCategoryKeywords = [
+            'Computer Science',
+            'Computer Sciences',
+            'CSE',
+            'Programming',
+            'Software Engineering',
+            'Data Structures',
+            'Algorithms',
+            'Database',
+            'Web Development',
+            'Machine Learning',
+            'Artificial Intelligence',
+            'Programming Languages',
+            'Data Structures & Algorithms',
+            'Database Systems',
+            'Computer Networks',
+            'Operating Systems',
+            'Mobile Development',
+            'Cybersecurity',
+            'Cloud Computing',
+            'Computer Architecture',
+            'Software Testing',
+            'Project Management'
+        ];
+
+        $categoryName = strtolower($this->category->name);
+        
+        foreach ($cseCategoryKeywords as $keyword) {
+            if (stripos($categoryName, strtolower($keyword)) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

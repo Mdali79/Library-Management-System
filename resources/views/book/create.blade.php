@@ -65,7 +65,7 @@
                                             <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                                                 <div class="card-body p-3">
                                                     <div class="row align-items-center">
-                                                        <div class="col-md-12 mb-2">
+                                                        <div class="col-md-10">
                                                             <label class="small text-muted mb-1">Author</label>
                                                             <select class="form-control author-select" name="authors[0][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
                                                                 <option value="">Select Author</option>
@@ -74,21 +74,10 @@
                                                                 @endforeach
                                                             </select>
                                                         </div>
-                                                        <div class="col-md-6">
-                                                            <div class="form-check">
-                                                                <input class="form-check-input main-author-radio" type="radio" name="main_author" value="0" id="main_author_0" checked>
-                                                                <label class="form-check-label" for="main_author_0">
-                                                                    <i class="fas fa-star text-warning"></i> Main Author
-                                                                </label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <div class="form-check">
-                                                                <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[0][is_corresponding]" value="1" id="corresponding_0">
-                                                                <label class="form-check-label" for="corresponding_0">
-                                                                    <i class="fas fa-envelope text-info"></i> Corresponding
-                                                                </label>
-                                                            </div>
+                                                        <div class="col-md-2 text-right">
+                                                            <button type="button" class="btn btn-sm btn-danger remove-author-btn mt-4" onclick="removeAuthorRow(this)" title="Remove Author" style="display: none;">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -192,6 +181,33 @@
                                 </div>
                             @enderror
                         </div>
+                        <div class="form-group">
+                            <label>PDF File (for Online Reading)</label>
+                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror" 
+                                name="pdf_file" accept=".pdf,application/pdf">
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Max size: 50MB. Only PDF files allowed. 
+                                Students will be able to read the first few chapters online.
+                            </small>
+                            @error('pdf_file')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Preview Pages</label>
+                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror" 
+                                name="preview_pages" value="{{ old('preview_pages', 50) }}" min="1" max="500">
+                            <small class="form-text text-muted">
+                                Number of pages students can read in preview mode (default: 50 pages)
+                            </small>
+                            @error('preview_pages')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
                         <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">
                             <i class="fas fa-save"></i> Save Book
                         </button>
@@ -215,31 +231,15 @@
                 <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                     <div class="card-body p-3">
                         <div class="row align-items-center">
-                            <div class="col-md-12 mb-2">
+                            <div class="col-md-10">
                                 <label class="small text-muted mb-1">Author</label>
                                 <select class="form-control author-select" name="authors[${authorRowIndex}][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
                                     <option value="">Select Author</option>
                                     ${allAuthors.map(author => `<option value="${author.id}">${author.name}</option>`).join('')}
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input main-author-radio" type="radio" name="main_author" value="${authorRowIndex}" id="main_author_${authorRowIndex}">
-                                    <label class="form-check-label" for="main_author_${authorRowIndex}">
-                                        <i class="fas fa-star text-warning"></i> Main Author
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-5">
-                                <div class="form-check">
-                                    <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[${authorRowIndex}][is_corresponding]" value="1" id="corresponding_${authorRowIndex}">
-                                    <label class="form-check-label" for="corresponding_${authorRowIndex}">
-                                        <i class="fas fa-envelope text-info"></i> Corresponding
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-1 text-right">
-                                <button type="button" class="btn btn-sm btn-danger remove-author-btn" onclick="removeAuthorRow(this)" title="Remove Author">
+                            <div class="col-md-2 text-right">
+                                <button type="button" class="btn btn-sm btn-danger remove-author-btn mt-4" onclick="removeAuthorRow(this)" title="Remove Author">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -255,21 +255,26 @@
 
         function removeAuthorRow(btn) {
             const row = btn.closest('.author-row');
-            const rowIndex = row.getAttribute('data-row-index');
+            const container = document.getElementById('authors-container');
+            const rows = container.querySelectorAll('.author-row');
             
-            // Check if this is the main author
-            const isMainAuthor = row.querySelector('.main-author-radio').checked;
-            
-            // If removing main author, set first remaining author as main
-            if (isMainAuthor) {
-                const remainingRows = document.querySelectorAll('.author-row');
-                if (remainingRows.length > 1) {
-                    remainingRows[0].querySelector('.main-author-radio').checked = true;
-                }
+            // Don't allow removing if only one author row remains
+            if (rows.length <= 1) {
+                alert('At least one author is required.');
+                return;
             }
             
             row.remove();
             updateAuthorOptions();
+            
+            // Show/hide remove buttons based on number of rows
+            const remainingRows = container.querySelectorAll('.author-row');
+            remainingRows.forEach((r, index) => {
+                const removeBtn = r.querySelector('.remove-author-btn');
+                if (removeBtn) {
+                    removeBtn.style.display = remainingRows.length > 1 ? 'block' : 'none';
+                }
+            });
         }
 
         function updateAuthorOptions() {
@@ -307,15 +312,16 @@
             }
         });
 
-        // Ensure only one main author is selected
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('main-author-radio') && e.target.checked) {
-                document.querySelectorAll('.main-author-radio').forEach(radio => {
-                    if (radio !== e.target) {
-                        radio.checked = false;
-                    }
-                });
-            }
+        // Show/hide remove buttons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('authors-container');
+            const rows = container.querySelectorAll('.author-row');
+            rows.forEach((row, index) => {
+                const removeBtn = row.querySelector('.remove-author-btn');
+                if (removeBtn) {
+                    removeBtn.style.display = rows.length > 1 ? 'block' : 'none';
+                }
+            });
         });
 
         // Ensure only one corresponding author is selected

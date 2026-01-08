@@ -65,8 +65,6 @@
                                             $authorsToShow = !empty($oldAuthors) ? $oldAuthors : $existingAuthors->map(function($author) {
                                                 return [
                                                     'id' => $author->id,
-                                                    'is_main' => $author->pivot->is_main_author ?? false,
-                                                    'is_corresponding' => $author->pivot->is_corresponding_author ?? false,
                                                 ];
                                             })->toArray();
                                         @endphp
@@ -76,7 +74,7 @@
                                                     <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                                                         <div class="card-body p-3">
                                                             <div class="row align-items-center">
-                                                                <div class="col-md-12 mb-2">
+                                                                <div class="col-md-10">
                                                                     <label class="small text-muted mb-1">Author</label>
                                                                     <select class="form-control author-select" name="authors[{{ $index }}][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
                                                                         <option value="">Select Author</option>
@@ -88,30 +86,10 @@
                                                                         @endforeach
                                                                     </select>
                                                                 </div>
-                                                                <div class="col-md-6">
-                                                                    <div class="form-check">
-                                                                        <input class="form-check-input main-author-radio" type="radio" name="main_author" value="{{ $index }}" id="main_author_{{ $index }}" 
-                                                                            {{ (!empty($authorData['is_main']) || ($index == 0 && empty($authorsToShow[0]['is_main']))) ? 'checked' : '' }}>
-                                                                        <label class="form-check-label" for="main_author_{{ $index }}">
-                                                                            <i class="fas fa-star text-warning"></i> Main Author
-                                                                        </label>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-5">
-                                                                    <div class="form-check">
-                                                                        <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[{{ $index }}][is_corresponding]" value="1" id="corresponding_{{ $index }}"
-                                                                            {{ !empty($authorData['is_corresponding']) ? 'checked' : '' }}>
-                                                                        <label class="form-check-label" for="corresponding_{{ $index }}">
-                                                                            <i class="fas fa-envelope text-info"></i> Corresponding
-                                                                        </label>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-1 text-right">
-                                                                    @if($index > 0)
-                                                                        <button type="button" class="btn btn-sm btn-danger remove-author-btn" onclick="removeAuthorRow(this)" title="Remove Author">
-                                                                            <i class="fas fa-times"></i>
-                                                                        </button>
-                                                                    @endif
+                                                                <div class="col-md-2 text-right">
+                                                                    <button type="button" class="btn btn-sm btn-danger remove-author-btn mt-4" onclick="removeAuthorRow(this)" title="Remove Author" style="{{ $index == 0 && count($authorsToShow) == 1 ? 'display: none;' : '' }}">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -123,7 +101,7 @@
                                                 <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                                                     <div class="card-body p-3">
                                                         <div class="row align-items-center">
-                                                            <div class="col-md-12 mb-2">
+                                                            <div class="col-md-10">
                                                                 <label class="small text-muted mb-1">Author</label>
                                                                 <select class="form-control author-select" name="authors[0][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
                                                                     <option value="">Select Author</option>
@@ -132,21 +110,10 @@
                                                                     @endforeach
                                                                 </select>
                                                             </div>
-                                                            <div class="col-md-6">
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input main-author-radio" type="radio" name="main_author" value="0" id="main_author_0" checked>
-                                                                    <label class="form-check-label" for="main_author_0">
-                                                                        <i class="fas fa-star text-warning"></i> Main Author
-                                                                    </label>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="form-check">
-                                                                    <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[0][is_corresponding]" value="1" id="corresponding_0">
-                                                                    <label class="form-check-label" for="corresponding_0">
-                                                                        <i class="fas fa-envelope text-info"></i> Corresponding
-                                                                    </label>
-                                                                </div>
+                                                            <div class="col-md-2 text-right">
+                                                                <button type="button" class="btn btn-sm btn-danger remove-author-btn mt-4" onclick="removeAuthorRow(this)" title="Remove Author" style="display: none;">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -263,6 +230,43 @@
                                 </div>
                             @enderror
                         </div>
+                        <div class="form-group">
+                            <label>PDF File (for Online Reading)</label>
+                            @if($book->pdf_file)
+                                <div class="mb-2">
+                                    <p class="text-muted">
+                                        <i class="fas fa-file-pdf text-danger"></i> Current PDF: 
+                                        <a href="{{ route('reading.show', $book->id) }}" target="_blank" class="text-primary">
+                                            View PDF
+                                        </a>
+                                    </p>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror" 
+                                name="pdf_file" accept=".pdf,application/pdf">
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Leave empty to keep current PDF. Max size: 50MB. 
+                                Only PDF files allowed. Students will be able to read the first few chapters online.
+                            </small>
+                            @error('pdf_file')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Preview Pages</label>
+                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror" 
+                                name="preview_pages" value="{{ old('preview_pages', $book->preview_pages ?? 50) }}" min="1" max="500">
+                            <small class="form-text text-muted">
+                                Number of pages students can read in preview mode (default: 50 pages)
+                            </small>
+                            @error('preview_pages')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
                         <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">
                             <i class="fas fa-save"></i> Update Book
                         </button>
@@ -295,22 +299,9 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-check">
-                                    <input class="form-check-input main-author-radio" type="radio" name="main_author" value="${authorRowIndex}" id="main_author_${authorRowIndex}">
-                                    <label class="form-check-label" for="main_author_${authorRowIndex}">
-                                        <i class="fas fa-star text-warning"></i> Main Author
-                                    </label>
-                                </div>
                             </div>
-                            <div class="col-md-5">
-                                <div class="form-check">
-                                    <input class="form-check-input corresponding-author-checkbox" type="checkbox" name="authors[${authorRowIndex}][is_corresponding]" value="1" id="corresponding_${authorRowIndex}">
-                                    <label class="form-check-label" for="corresponding_${authorRowIndex}">
-                                        <i class="fas fa-envelope text-info"></i> Corresponding
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-1 text-right">
-                                <button type="button" class="btn btn-sm btn-danger remove-author-btn" onclick="removeAuthorRow(this)" title="Remove Author">
+                            <div class="col-md-2 text-right">
+                                <button type="button" class="btn btn-sm btn-danger remove-author-btn mt-4" onclick="removeAuthorRow(this)" title="Remove Author">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -326,21 +317,26 @@
 
         function removeAuthorRow(btn) {
             const row = btn.closest('.author-row');
-            const rowIndex = row.getAttribute('data-row-index');
+            const container = document.getElementById('authors-container');
+            const rows = container.querySelectorAll('.author-row');
             
-            // Check if this is the main author
-            const isMainAuthor = row.querySelector('.main-author-radio').checked;
-            
-            // If removing main author, set first remaining author as main
-            if (isMainAuthor) {
-                const remainingRows = document.querySelectorAll('.author-row');
-                if (remainingRows.length > 1) {
-                    remainingRows[0].querySelector('.main-author-radio').checked = true;
-                }
+            // Don't allow removing if only one author row remains
+            if (rows.length <= 1) {
+                alert('At least one author is required.');
+                return;
             }
             
             row.remove();
             updateAuthorOptions();
+            
+            // Show/hide remove buttons based on number of rows
+            const remainingRows = container.querySelectorAll('.author-row');
+            remainingRows.forEach((r, index) => {
+                const removeBtn = r.querySelector('.remove-author-btn');
+                if (removeBtn) {
+                    removeBtn.style.display = remainingRows.length > 1 ? 'block' : 'none';
+                }
+            });
         }
 
         function updateAuthorOptions() {
@@ -378,68 +374,8 @@
             }
         });
 
-        // Ensure only one main author is selected
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('main-author-radio') && e.target.checked) {
-                document.querySelectorAll('.main-author-radio').forEach(radio => {
-                    if (radio !== e.target) {
-                        radio.checked = false;
-                    }
-                });
-            }
-        });
-
-        // Ensure only one corresponding author is selected
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('corresponding-author-checkbox') && e.target.checked) {
-                document.querySelectorAll('.corresponding-author-checkbox').forEach(checkbox => {
-                    if (checkbox !== e.target) {
-                        checkbox.checked = false;
-                    }
-                });
-            }
-        });
-
-        // Before form submission, set hidden fields for main author and ensure all data is correct
+        // Before form submission, ensure all authors have IDs
         document.querySelector('form').addEventListener('submit', function(e) {
-            // Remove any existing hidden inputs to avoid duplicates
-            document.querySelectorAll('input[name*="[is_main]"]').forEach(input => {
-                if (input.type === 'hidden') {
-                    input.remove();
-                }
-            });
-            
-            const mainAuthorRadio = document.querySelector('.main-author-radio:checked');
-            if (mainAuthorRadio) {
-                const mainIndex = mainAuthorRadio.value;
-                const mainRow = document.querySelector(`.author-row[data-row-index="${mainIndex}"]`);
-                if (mainRow) {
-                    // Check if author is selected
-                    const authorSelect = mainRow.querySelector('.author-select');
-                    if (authorSelect && authorSelect.value) {
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = `authors[${mainIndex}][is_main]`;
-                        hiddenInput.value = '1';
-                        mainRow.appendChild(hiddenInput);
-                    } else {
-                        e.preventDefault();
-                        alert('Please select an author for the Main Author field.');
-                        authorSelect.focus();
-                        return false;
-                    }
-                } else {
-                    e.preventDefault();
-                    alert('Please ensure at least one author is marked as Main Author.');
-                    return false;
-                }
-            } else {
-                e.preventDefault();
-                alert('Please select at least one Main Author.');
-                return false;
-            }
-            
-            // Ensure all authors have IDs
             const allAuthorRows = document.querySelectorAll('.author-row');
             let hasError = false;
             allAuthorRows.forEach(row => {
@@ -455,6 +391,18 @@
                 alert('Please select an author for all author fields.');
                 return false;
             }
+        });
+
+        // Show/hide remove buttons on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('authors-container');
+            const rows = container.querySelectorAll('.author-row');
+            rows.forEach((row, index) => {
+                const removeBtn = row.querySelector('.remove-author-btn');
+                if (removeBtn) {
+                    removeBtn.style.display = rows.length > 1 ? 'block' : 'none';
+                }
+            });
         });
 
         // Initialize author options on page load

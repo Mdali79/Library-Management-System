@@ -138,9 +138,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/reservations/notify/{bookId}', [App\Http\Controllers\BookReservationController::class, 'notifyAvailable'])->name('reservations.notify');
     Route::post('/reservations/mark-issued/{id}', [App\Http\Controllers\BookReservationController::class, 'markAsIssued'])->name('reservations.mark_issued');
 
-    // Chatbot routes (Student/Teacher only)
+    // Chatbot routes (Student only)
     Route::get('/chatbot', [App\Http\Controllers\ChatBotController::class, 'index'])->name('chatbot.index');
     Route::post('/chatbot/chat', [App\Http\Controllers\ChatBotController::class, 'chat'])->name('chatbot.chat');
+
+    // Book Reading routes (Student only)
+    Route::get('/reading', [App\Http\Controllers\BookReadingController::class, 'index'])->name('reading.index');
+    Route::get('/reading/{book}', [App\Http\Controllers\BookReadingController::class, 'show'])->name('reading.show');
+    Route::get('/reading/{book}/pdf', [App\Http\Controllers\BookReadingController::class, 'getPdfPreview'])->name('reading.pdf');
 
     // Profile routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');

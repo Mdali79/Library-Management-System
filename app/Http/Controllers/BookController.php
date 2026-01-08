@@ -146,20 +146,6 @@ class BookController extends Controller
         $authorsData = $data['authors'] ?? [];
         unset($data['authors']);
         
-        // Get main_author index from radio button and ensure it's set
-        $mainAuthorIndex = $request->input('main_author');
-        if (!empty($mainAuthorIndex) && isset($authorsData[$mainAuthorIndex])) {
-            $authorsData[$mainAuthorIndex]['is_main'] = '1';
-        } else {
-            // Fallback: find first author with is_main set
-            foreach ($authorsData as $index => &$author) {
-                if (isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1)) {
-                    $author['is_main'] = '1';
-                    break;
-                }
-            }
-        }
-        
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $image = $request->file('cover_image');
@@ -168,34 +154,49 @@ class BookController extends Controller
             $data['cover_image'] = 'book_covers/' . $imageName;
         }
 
+        // Handle PDF file upload
+        if ($request->hasFile('pdf_file')) {
+            $pdf = $request->file('pdf_file');
+            // Validate PDF file type
+            if ($pdf->getClientMimeType() !== 'application/pdf') {
+                return redirect()->back()->withErrors(['pdf_file' => 'Only PDF files are allowed.'])->withInput();
+            }
+            // Validate file size (max 50MB)
+            if ($pdf->getSize() > 50 * 1024 * 1024) {
+                return redirect()->back()->withErrors(['pdf_file' => 'PDF file size must not exceed 50MB.'])->withInput();
+            }
+            $pdfName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $pdf->getClientOriginalName());
+            $pdf->storeAs('public/book_pdfs', $pdfName);
+            $data['pdf_file'] = 'book_pdfs/' . $pdfName;
+        }
+
+        // Set preview_pages default if not provided
+        if (!isset($data['preview_pages']) || empty($data['preview_pages'])) {
+            $data['preview_pages'] = 50; // Default to 50 pages
+        }
+
         // Set default quantities if not provided
         $data['total_quantity'] = $data['total_quantity'] ?? 1;
         $data['available_quantity'] = $data['total_quantity'];
         $data['issued_quantity'] = 0;
         $data['status'] = 'Y';
 
-        // Set auther_id for backward compatibility (use first main author or first author)
-        $mainAuthor = collect($authorsData)->first(function($author) {
-            return isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1);
-        });
-        $firstAuthor = $mainAuthor ?? ($authorsData[0] ?? null);
+        // Set auther_id for backward compatibility (use first author)
+        $firstAuthor = $authorsData[0] ?? null;
         if ($firstAuthor && isset($firstAuthor['id'])) {
             $data['auther_id'] = $firstAuthor['id'];
         }
 
         $book = book::create($data);
         
-        // Sync authors to pivot table
-        $syncData = [];
+        // Sync authors to pivot table (no roles needed)
+        $authorIds = [];
         foreach ($authorsData as $author) {
             if (isset($author['id']) && !empty($author['id'])) {
-                $syncData[$author['id']] = [
-                    'is_main_author' => isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1),
-                    'is_corresponding_author' => isset($author['is_corresponding']) && (!empty($author['is_corresponding']) || $author['is_corresponding'] === '1' || $author['is_corresponding'] === 1),
-                ];
+                $authorIds[] = $author['id'];
             }
         }
-        $book->authors()->sync($syncData);
+        $book->authors()->sync($authorIds);
         
         return redirect()->route('books')->with('success', 'Book added successfully');
     }
@@ -248,47 +249,52 @@ class BookController extends Controller
             $data['cover_image'] = 'book_covers/' . $imageName;
         }
 
+        // Handle PDF file upload
+        if ($request->hasFile('pdf_file')) {
+            $pdf = $request->file('pdf_file');
+            // Validate PDF file type
+            if ($pdf->getClientMimeType() !== 'application/pdf') {
+                return redirect()->back()->withErrors(['pdf_file' => 'Only PDF files are allowed.'])->withInput();
+            }
+            // Validate file size (max 50MB)
+            if ($pdf->getSize() > 50 * 1024 * 1024) {
+                return redirect()->back()->withErrors(['pdf_file' => 'PDF file size must not exceed 50MB.'])->withInput();
+            }
+            // Delete old PDF if exists
+            if ($book->pdf_file && Storage::exists('public/' . $book->pdf_file)) {
+                Storage::delete('public/' . $book->pdf_file);
+            }
+            $pdfName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $pdf->getClientOriginalName());
+            $pdf->storeAs('public/book_pdfs', $pdfName);
+            $data['pdf_file'] = 'book_pdfs/' . $pdfName;
+        }
+
+        // Set preview_pages default if not provided
+        if (!isset($data['preview_pages']) || empty($data['preview_pages'])) {
+            $data['preview_pages'] = $book->preview_pages ?? 50; // Keep existing or default to 50
+        }
+
         // Update quantities - ensure available_quantity is not less than issued_quantity
         if (isset($data['total_quantity'])) {
             $data['available_quantity'] = max(0, $data['total_quantity'] - $book->issued_quantity);
         }
 
-        // Get main_author index from radio button and ensure it's set
-        $mainAuthorIndex = $request->input('main_author');
-        if (!empty($mainAuthorIndex) && isset($authorsData[$mainAuthorIndex])) {
-            $authorsData[$mainAuthorIndex]['is_main'] = '1';
-        } else {
-            // Fallback: find first author with is_main set
-            foreach ($authorsData as $index => &$author) {
-                if (isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1)) {
-                    $author['is_main'] = '1';
-                    break;
-                }
-            }
-        }
-
-        // Set auther_id for backward compatibility (use first main author or first author)
-        $mainAuthor = collect($authorsData)->first(function($author) {
-            return isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1 || $author['is_main'] === true);
-        });
-        $firstAuthor = $mainAuthor ?? ($authorsData[0] ?? null);
+        // Set auther_id for backward compatibility (use first author)
+        $firstAuthor = $authorsData[0] ?? null;
         if ($firstAuthor && isset($firstAuthor['id'])) {
             $data['auther_id'] = $firstAuthor['id'];
         }
 
         $book->update($data);
         
-        // Sync authors to pivot table
-        $syncData = [];
+        // Sync authors to pivot table (no roles needed)
+        $authorIds = [];
         foreach ($authorsData as $author) {
             if (isset($author['id']) && !empty($author['id'])) {
-                $syncData[$author['id']] = [
-                    'is_main_author' => isset($author['is_main']) && (!empty($author['is_main']) || $author['is_main'] === '1' || $author['is_main'] === 1 || $author['is_main'] === true),
-                    'is_corresponding_author' => isset($author['is_corresponding']) && (!empty($author['is_corresponding']) || $author['is_corresponding'] === '1' || $author['is_corresponding'] === 1 || $author['is_corresponding'] === true),
-                ];
+                $authorIds[] = $author['id'];
             }
         }
-        $book->authors()->sync($syncData);
+        $book->authors()->sync($authorIds);
         
         return redirect()->route('books')->with('success', 'Book updated successfully');
     }
