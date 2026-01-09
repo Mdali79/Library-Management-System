@@ -152,24 +152,29 @@ ul {
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding: 0.75rem 0;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
 }
 
 .menu li {
     display: inline-block;
-    margin: 0 0.25rem;
+    margin: 0 0.15rem;
+    flex-shrink: 0;
 }
 
 .menu li a {
     color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 500;
-    padding: 0.625rem 1.25rem;
+    padding: 0.5rem 0.9rem;
     display: block;
     border-radius: var(--radius-md);
     transition: all 0.3s ease;
     position: relative;
+    white-space: nowrap;
 }
 
 .menu li a:hover {
@@ -807,15 +812,20 @@ select.form-control.search-select {
     }
     
     .menu {
-        flex-direction: column;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding: 0.5rem 0;
     }
     
     .menu li {
-        width: 100%;
-        margin: 0.25rem 0;
+        flex-shrink: 0;
+        margin: 0 0.1rem;
     }
     
     .menu li a {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.7rem;
         text-align: center;
     }
     

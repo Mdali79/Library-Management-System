@@ -37,7 +37,7 @@ Route::get('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'ver
 Route::post('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify.store');
 
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::get('change-password',[dashboardController::class,'change_password_view'])->name('change_password_view');
     Route::post('change-password',[dashboardController::class,'change_password'])->name('change_password');
     Route::get('/dashboard', [dashboardController::class, 'index'])->name('dashboard');

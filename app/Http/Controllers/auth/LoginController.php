@@ -16,40 +16,40 @@ class LoginController extends Controller
             'password' => "required",
         ]);
 
+        // First, find the user by username to check verification status BEFORE attempting login
+        $user = \App\Models\User::where('username', $request->username)->first();
+
+        if ($user) {
+            // Check if user is verified (is_verified must be 1) BEFORE attempting authentication
+            if (!$user->is_verified) {
+                return redirect()->back()->withErrors([
+                    'username' => 'Your account is not verified yet. Please wait for an Administrator to approve your registration. You will be able to login once your account is verified.'
+                ])->withInput($request->only('username'));
+            }
+            
+            // Check if registration is approved
+            if ($user->registration_status == 'pending') {
+                return redirect()->back()->withErrors([
+                    'username' => 'Your account is pending approval. Please wait for an Administrator to approve your registration.'
+                ])->withInput($request->only('username'));
+            }
+            
+            if ($user->registration_status == 'rejected') {
+                return redirect()->back()->withErrors([
+                    'username' => 'Your registration has been rejected. Please contact the administrator for more information.'
+                ])->withInput($request->only('username'));
+            }
+        }
+
         $credentials = [
             'username' => $request->username,
             'password' => $request->password,
         ];
 
         if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            
-            // Check if user is verified (is_verified must be 1)
-            if (!$user->is_verified) {
-                Auth::logout();
-                return redirect()->back()->withErrors([
-                    'username' => 'Your account is not verified yet. Please wait for an Administrator to approve your registration. You will be able to login once your account is verified.'
-                ]);
-            }
-            
-            // Check if registration is approved
-            if ($user->registration_status == 'pending') {
-                Auth::logout();
-                return redirect()->back()->withErrors([
-                    'username' => 'Your account is pending approval. Please wait for an Administrator to approve your registration.'
-                ]);
-            }
-            
-            if ($user->registration_status == 'rejected') {
-                Auth::logout();
-                return redirect()->back()->withErrors([
-                    'username' => 'Your registration has been rejected. Please contact the administrator for more information.'
-                ]);
-            }
-
             return redirect('/dashboard');
         } else {
-            return redirect()->back()->withErrors(['username' => 'Invalid username or password']);
+            return redirect()->back()->withErrors(['username' => 'Invalid username or password'])->withInput($request->only('username'));
         }
     }
 

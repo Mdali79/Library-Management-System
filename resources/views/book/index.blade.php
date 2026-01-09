@@ -141,7 +141,7 @@
                                     <td>{{ $book->name }}</td>
                                     <td>{{ $book->isbn ?? 'N/A' }}</td>
                                     <td>{{ $book->category->name }}</td>
-                                    <td>
+                                    <td style="white-space: nowrap;">
                                         @php
                                             $bookAuthors = $book->authors ?? collect();
                                             if ($bookAuthors->isEmpty() && $book->auther) {
@@ -153,7 +153,7 @@
                                             @foreach($bookAuthors as $index => $author)
                                                 <span>{{ $author->name }}</span>
                                                 @if(!$loop->last)
-                                                    <br>
+                                                    <span style="margin: 0 3px;">,</span>
                                                 @endif
                                             @endforeach
                                         @else

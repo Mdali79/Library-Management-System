@@ -103,7 +103,6 @@
                                             @if($book->request_status == 'pending')
                                                 <form action="{{ route('book_issue.destroy', $book->id) }}" method="post" class="d-inline">
                                                     @csrf
-                                                    @method('DELETE')
                                                     <button class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this request?')">
                                                         <i class="fas fa-times"></i> Cancel
                                                     </button>
