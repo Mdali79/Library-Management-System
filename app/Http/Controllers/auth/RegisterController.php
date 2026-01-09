@@ -75,11 +75,10 @@ class RegisterController extends Controller
         // Generate verification code
         $verificationCode = Str::random(6);
 
-        // Determine registration status based on role
-        // Student: Auto-approved
-        // Admin: Requires approval
-        $registrationStatus = $request->role === 'Student' ? 'approved' : 'pending';
-        $isVerified = $request->role === 'Student' ? true : false;
+        // All users (Student and Admin) require approval before they can login
+        // Set is_verified = 0 and registration_status = 'pending' for all new registrations
+        $registrationStatus = 'pending';
+        $isVerified = false;
 
         // Create user
         // For Admin, only save department if provided, other fields should be null
@@ -114,36 +113,15 @@ class RegisterController extends Controller
 
         $user = User::create($userData);
 
-        // Create student record if role is Student (only if approved)
-        if ($request->role === 'Student' && $registrationStatus == 'approved') {
-            student::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'phone' => $request->contact,
-                'role' => $request->role,
-                'department' => $request->department,
-                'batch' => $request->batch,
-                'roll' => $request->roll,
-                'reg_no' => $request->reg_no,
-                'user_id' => $user->id,
-                'borrowing_limit' => 5,
-                'class' => $request->department ?? 'General',
-                'age' => 'N/A',
-                'gender' => 'N/A',
-                'address' => $request->department ?? 'N/A',
-            ]);
-        }
+        // Student record will be created when admin approves the registration
+        // (handled in UserRegistrationController::approve method)
 
         // Here you would send verification email/SMS
         // Mail::to($user->email)->send(new VerificationEmail($verificationCode));
         // Or send SMS with OTP
 
-        // Different messages based on registration status
-        if ($registrationStatus == 'pending') {
-            return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator. You will be notified once approved.');
-        } else {
-            return redirect()->route('login')->with('success', 'Registration successful! You can now login with your credentials.');
-        }
+        // All registrations require approval
+        return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator. You will be notified once approved and can then login.');
     }
 
     /**

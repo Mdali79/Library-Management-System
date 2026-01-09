@@ -10,6 +10,7 @@ use App\Models\category;
 use App\Models\publisher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
 {
@@ -78,35 +79,8 @@ class BookController extends Controller
             }
         }
 
-        // Get keyword suggestions for search
-        $suggestions = [];
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            // Get book name suggestions
-            $bookSuggestions = book::where('name', 'like', "%{$searchTerm}%")
-                ->limit(5)
-                ->pluck('name')
-                ->toArray();
-            // Get author name suggestions
-            $authorSuggestions = auther::where('name', 'like', "%{$searchTerm}%")
-                ->limit(5)
-                ->pluck('name')
-                ->toArray();
-            // Get ISBN suggestions
-            $isbnSuggestions = book::where('isbn', 'like', "%{$searchTerm}%")
-                ->limit(5)
-                ->pluck('isbn')
-                ->filter()
-                ->toArray();
-            
-            $suggestions = array_merge($bookSuggestions, $authorSuggestions, $isbnSuggestions);
-            $suggestions = array_unique(array_slice($suggestions, 0, 10));
-        } else {
-            // Get popular suggestions
-            $bookSuggestions = book::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
-            $authorSuggestions = auther::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
-            $suggestions = array_merge($bookSuggestions, $authorSuggestions);
-        }
+        // Get keyword suggestions for search - comprehensive list
+        $suggestions = $this->getKeywordSuggestions($request->get('search', ''));
         
         return view('book.index', [
             'books' => $query->latest()->paginate(10),
@@ -125,6 +99,11 @@ class BookController extends Controller
      */
     public function create()
     {
+        // Only Admin can create books
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->route('books')->withErrors(['error' => 'You do not have permission to create books.']);
+        }
+        
         return view('book.create',[
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
@@ -140,6 +119,11 @@ class BookController extends Controller
      */
     public function store(StorebookRequest $request)
     {
+        // Only Admin can store books
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->route('books')->withErrors(['error' => 'You do not have permission to create books.']);
+        }
+        
         $data = $request->validated();
         
         // Extract authors data before creating book
@@ -210,6 +194,11 @@ class BookController extends Controller
      */
     public function edit(book $book)
     {
+        // Only Admin can edit books
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->route('books')->withErrors(['error' => 'You do not have permission to edit books.']);
+        }
+        
         // Load existing authors with their roles
         $book->load('authors');
         
@@ -230,6 +219,11 @@ class BookController extends Controller
      */
     public function update(UpdatebookRequest $request, $id)
     {
+        // Only Admin can update books
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->route('books')->withErrors(['error' => 'You do not have permission to update books.']);
+        }
+        
         $book = book::find($id);
         $data = $request->validated();
         
@@ -307,7 +301,125 @@ class BookController extends Controller
      */
     public function destroy($id)
     {
+        // Only Admin can delete books
+        if (Auth::user()->role !== 'Admin') {
+            return redirect()->route('books')->withErrors(['error' => 'You do not have permission to delete books.']);
+        }
+        
         book::find($id)->delete();
         return redirect()->route('books');
+    }
+
+    /**
+     * Get keyword suggestions for search
+     *
+     * @param string $searchTerm
+     * @return array
+     */
+    private function getKeywordSuggestions($searchTerm = '')
+    {
+        $suggestions = [];
+        
+        if (!empty($searchTerm)) {
+            $searchTerm = trim($searchTerm);
+            
+            // Get book name suggestions
+            $bookSuggestions = book::where('name', 'like', "%{$searchTerm}%")
+                ->limit(8)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'book', 'icon' => '📚'];
+                })
+                ->toArray();
+            
+            // Get author name suggestions
+            $authorSuggestions = auther::where('name', 'like', "%{$searchTerm}%")
+                ->limit(8)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'author', 'icon' => '✍️'];
+                })
+                ->toArray();
+            
+            // Get ISBN suggestions
+            $isbnSuggestions = book::where('isbn', 'like', "%{$searchTerm}%")
+                ->whereNotNull('isbn')
+                ->where('isbn', '!=', '')
+                ->limit(5)
+                ->pluck('isbn')
+                ->map(function($isbn) {
+                    return ['text' => $isbn, 'type' => 'isbn', 'icon' => '🔢'];
+                })
+                ->toArray();
+            
+            // Get category suggestions
+            $categorySuggestions = category::where('name', 'like', "%{$searchTerm}%")
+                ->limit(5)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'category', 'icon' => '📂'];
+                })
+                ->toArray();
+            
+            // Get publisher suggestions
+            $publisherSuggestions = publisher::where('name', 'like', "%{$searchTerm}%")
+                ->limit(5)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'publisher', 'icon' => '🏢'];
+                })
+                ->toArray();
+            
+            $suggestions = array_merge(
+                $bookSuggestions,
+                $authorSuggestions,
+                $isbnSuggestions,
+                $categorySuggestions,
+                $publisherSuggestions
+            );
+        } else {
+            // Get popular suggestions when no search term
+            $bookSuggestions = book::orderBy('id', 'desc')
+                ->limit(8)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'book', 'icon' => '📚'];
+                })
+                ->toArray();
+            
+            $authorSuggestions = auther::orderBy('id', 'desc')
+                ->limit(8)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'author', 'icon' => '✍️'];
+                })
+                ->toArray();
+            
+            $categorySuggestions = category::orderBy('id', 'desc')
+                ->limit(5)
+                ->pluck('name')
+                ->map(function($name) {
+                    return ['text' => $name, 'type' => 'category', 'icon' => '📂'];
+                })
+                ->toArray();
+            
+            $suggestions = array_merge($bookSuggestions, $authorSuggestions, $categorySuggestions);
+        }
+        
+        return array_slice($suggestions, 0, 15);
+    }
+
+    /**
+     * Get keyword suggestions via AJAX
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getSuggestions(Request $request)
+    {
+        $searchTerm = $request->get('q', '');
+        $suggestions = $this->getKeywordSuggestions($searchTerm);
+        
+        return response()->json($suggestions);
     }
 }

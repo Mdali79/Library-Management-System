@@ -216,7 +216,7 @@
                             <label>Book Cover Image</label>
                             @if($book->cover_image)
                                 <div class="mb-2">
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $book->cover_image) }}" 
                                         alt="{{ $book->name }}" style="max-width: 200px; max-height: 300px;">
                                     <p class="text-muted">Current cover image</p>
                                 </div>

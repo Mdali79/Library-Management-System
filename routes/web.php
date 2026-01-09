@@ -71,6 +71,7 @@ Route::middleware('auth')->group(function () {
 
     // books CRUD
     Route::get('/books', [BookController::class, 'index'])->name('books');
+    Route::get('/book/suggestions', [BookController::class, 'getSuggestions'])->name('book.suggestions');
     Route::get('/book/create', [BookController::class, 'create'])->name('book.create');
     Route::get('/book/edit/{book}', [BookController::class, 'edit'])->name('book.edit');
     Route::post('/book/update/{id}', [BookController::class, 'update'])->name('book.update');

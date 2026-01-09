@@ -10,9 +10,11 @@
                     </h2>
                 </div>
                 <div class="col-md-6 text-right">
-                    <a class="add-new" href="{{ route('book.create') }}">
-                        <i class="fas fa-plus-circle"></i> Add New Book
-                    </a>
+                    @if(auth()->user()->role == 'Admin')
+                        <a class="add-new" href="{{ route('book.create') }}">
+                            <i class="fas fa-plus-circle"></i> Add New Book
+                        </a>
+                    @endif
                 </div>
             </div>
 
@@ -28,7 +30,7 @@
                         <div class="card-body" style="background: #ffffff;">
                             <form method="GET" action="{{ route('books') }}">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <div class="form-group" style="position: relative;">
                                             <label>Search (Name/ISBN/Author)</label>
                                             <input type="text" name="search" id="book-search-input" class="form-control"
@@ -39,7 +41,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Category</label>
-                                            <select name="category" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
+                                            <select name="category" class="form-control search-select">
                                                 <option value="">All Categories</option>
                                                 @foreach($categories as $cat)
                                                     <option value="{{ $cat->id }}"
@@ -53,7 +55,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Author</label>
-                                            <select name="author" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
+                                            <select name="author" class="form-control search-select">
                                                 <option value="">All Authors</option>
                                                 @foreach($authors as $auth)
                                                     <option value="{{ $auth->id }}"
@@ -67,7 +69,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Publisher</label>
-                                            <select name="publisher" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
+                                            <select name="publisher" class="form-control search-select">
                                                 <option value="">All Publishers</option>
                                                 @foreach($publishers as $pub)
                                                     <option value="{{ $pub->id }}"
@@ -81,14 +83,14 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>Status</label>
-                                            <select name="status" class="form-control search-select" style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 5rem !important; min-height: 2.75rem !important;">
+                                            <select name="status" class="form-control search-select">
                                                 <option value="">All Status</option>
                                                 <option value="available" {{ ($filters['status'] ?? '') == 'available' ? 'selected' : '' }}>Available</option>
                                                 <option value="unavailable" {{ ($filters['status'] ?? '') == 'unavailable' ? 'selected' : '' }}>Unavailable</option>
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-1">
+                                    <div class="col-md-2">
                                         <div class="form-group">
                                             <label>&nbsp;</label>
                                             <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.75rem;">
@@ -117,8 +119,10 @@
                             <th>Publisher</th>
                             <th>Quantity</th>
                             <th>Status</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
+                            @if(auth()->user()->role == 'Admin')
+                                <th>Edit</th>
+                                <th>Delete</th>
+                            @endif
                         </thead>
                         <tbody>
                             @forelse ($books as $book)
@@ -126,7 +130,7 @@
                                     <td class="id">{{ $book->id }}</td>
                                     <td>
                                         @if($book->cover_image)
-                                            <img src="{{ asset('storage/' . $book->cover_image) }}"
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $book->cover_image) }}"
                                                 alt="{{ $book->name }}" style="width: 50px; height: 70px; object-fit: cover;">
                                         @else
                                             <div style="width: 50px; height: 70px; background: #ddd; display: flex; align-items: center; justify-content: center;">
@@ -169,19 +173,21 @@
                                             <span class='badge badge-danger'>Unavailable</span>
                                         @endif
                                     </td>
-                                    <td class="edit">
-                                        <a href="{{ route('book.edit', $book) }}" class="btn btn-success">Edit</a>
-                                    </td>
-                                    <td class="delete">
-                                        <form action="{{ route('book.destroy', $book) }}" method="post" class="form-hidden">
-                                            <button class="btn btn-danger delete-book">Delete</button>
-                                            @csrf
-                                        </form>
-                                    </td>
+                                    @if(auth()->user()->role == 'Admin')
+                                        <td class="edit">
+                                            <a href="{{ route('book.edit', $book) }}" class="btn btn-success">Edit</a>
+                                        </td>
+                                        <td class="delete">
+                                            <form action="{{ route('book.destroy', $book) }}" method="post" class="form-hidden">
+                                                <button class="btn btn-danger delete-book">Delete</button>
+                                                @csrf
+                                            </form>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11">No Books Found</td>
+                                    <td colspan="{{ auth()->user()->role == 'Admin' ? '11' : '9' }}">No Books Found</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -208,6 +214,9 @@
             padding: 10px 15px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
         }
         .suggestion-item:hover {
             background-color: #f8f9fa;
@@ -215,93 +224,207 @@
         .suggestion-item:last-child {
             border-bottom: none;
         }
+        .suggestion-icon {
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        .suggestion-text {
+            flex: 1;
+        }
+        .suggestion-type {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-left: auto;
+            text-transform: capitalize;
+        }
+        .suggestions-header {
+            padding: 8px 15px;
+            background-color: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
 
-        /* Additional inline styles to ensure dropdown text is fully visible */
+        /* Styles to ensure dropdown selected text stays on one line */
         .search-select,
         select.search-select,
         select.form-control.search-select,
         .form-group select.search-select {
-            overflow: visible !important;
-            text-overflow: clip !important;
-            white-space: normal !important;
-            word-wrap: break-word !important;
-            padding-right: 5rem !important;
-            padding-left: 1rem !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            padding-right: 2rem !important;
+            padding-left: 0.5rem !important;
             padding-top: 0.5rem !important;
             padding-bottom: 0.5rem !important;
-            min-height: 2.75rem !important;
-            height: auto !important;
+            min-height: 2.5rem !important;
+            height: 2.5rem !important;
             line-height: 1.5 !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
-            background-position: right 0.75rem center !important;
-            font-size: 1rem !important;
+            background-position: right 0.5rem center !important;
+            background-size: 1rem 1rem !important;
+            font-size: 0.875rem !important;
             text-indent: 0 !important;
+        }
+
+        /* Dropdown options can wrap if needed */
+        .search-select option {
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            padding: 0.5rem !important;
         }
 
         .search-select:focus,
         .search-select:active,
-        .search-select:hover,
-        select.search-select:focus,
-        select.search-select:active,
-        select.search-select:hover {
-            overflow: visible !important;
-            text-overflow: clip !important;
-            white-space: normal !important;
-            padding-right: 5rem !important;
+        .search-select:hover {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
         }
     </style>
 
     <script>
         const bookSearchInput = document.getElementById('book-search-input');
         const bookSuggestionsDiv = document.getElementById('book-suggestions');
-        const bookSuggestions = @json($suggestions ?? []);
+        let suggestionTimeout = null;
+        const suggestionsUrl = '{{ route("book.suggestions") }}';
 
+        // Show suggestions on focus
         bookSearchInput.addEventListener('focus', function() {
-            if (bookSuggestions.length > 0) {
-                showBookSuggestions();
-            }
+            fetchSuggestions('');
         });
 
+        // Fetch suggestions as user types
         bookSearchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            if (searchTerm.length > 0) {
-                const filtered = bookSuggestions.filter(s => s.toLowerCase().includes(searchTerm));
-                if (filtered.length > 0) {
-                    displayBookSuggestions(filtered);
-                } else {
-                    bookSuggestionsDiv.style.display = 'none';
-                }
-            } else {
-                showBookSuggestions();
+            const searchTerm = this.value.trim();
+
+            // Clear previous timeout
+            if (suggestionTimeout) {
+                clearTimeout(suggestionTimeout);
             }
+
+            // Debounce: wait 300ms after user stops typing
+            suggestionTimeout = setTimeout(function() {
+                fetchSuggestions(searchTerm);
+            }, 300);
         });
 
-        function showBookSuggestions() {
-            displayBookSuggestions(bookSuggestions);
+        // Fetch suggestions from server
+        function fetchSuggestions(searchTerm) {
+            const url = suggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
+
+            fetch(url)
+                .then(response => response.json())
+                .then(suggestions => {
+                    if (suggestions && suggestions.length > 0) {
+                        displayBookSuggestions(suggestions);
+                    } else {
+                        bookSuggestionsDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                    bookSuggestionsDiv.style.display = 'none';
+                });
         }
 
-        function displayBookSuggestions(items) {
+        function displayBookSuggestions(suggestions) {
             bookSuggestionsDiv.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.textContent = item;
-                div.addEventListener('click', function() {
-                    bookSearchInput.value = item;
-                    bookSuggestionsDiv.style.display = 'none';
-                    document.querySelector('form[method="GET"]').submit();
-                });
-                bookSuggestionsDiv.appendChild(div);
+
+            // Group suggestions by type
+            const grouped = {};
+            suggestions.forEach(item => {
+                const type = item.type || 'other';
+                if (!grouped[type]) {
+                    grouped[type] = [];
+                }
+                grouped[type].push(item);
             });
+
+            // Display grouped suggestions
+            Object.keys(grouped).forEach(type => {
+                const items = grouped[type];
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+
+                    const icon = document.createElement('span');
+                    icon.className = 'suggestion-icon';
+                    icon.textContent = item.icon || '🔍';
+
+                    const text = document.createElement('span');
+                    text.className = 'suggestion-text';
+                    text.textContent = item.text;
+
+                    const typeLabel = document.createElement('span');
+                    typeLabel.className = 'suggestion-type';
+                    typeLabel.textContent = item.type || '';
+
+                    div.appendChild(icon);
+                    div.appendChild(text);
+                    div.appendChild(typeLabel);
+
+                    div.addEventListener('click', function() {
+                        bookSearchInput.value = item.text;
+                        bookSuggestionsDiv.style.display = 'none';
+                        // Auto-submit form when suggestion is clicked
+                        document.querySelector('form[method="GET"]').submit();
+                    });
+
+                    bookSuggestionsDiv.appendChild(div);
+                });
+            });
+
             bookSuggestionsDiv.style.display = 'block';
         }
 
+        // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
             if (!bookSearchInput.contains(e.target) && !bookSuggestionsDiv.contains(e.target)) {
                 bookSuggestionsDiv.style.display = 'none';
             }
         });
+
+        // Handle keyboard navigation
+        bookSearchInput.addEventListener('keydown', function(e) {
+            const visibleSuggestions = bookSuggestionsDiv.querySelectorAll('.suggestion-item');
+            const highlighted = bookSuggestionsDiv.querySelector('.suggestion-item.highlighted');
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (highlighted) {
+                    highlighted.classList.remove('highlighted');
+                    const next = highlighted.nextElementSibling;
+                    if (next) {
+                        next.classList.add('highlighted');
+                    } else if (visibleSuggestions.length > 0) {
+                        visibleSuggestions[0].classList.add('highlighted');
+                    }
+                } else if (visibleSuggestions.length > 0) {
+                    visibleSuggestions[0].classList.add('highlighted');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (highlighted) {
+                    highlighted.classList.remove('highlighted');
+                    const prev = highlighted.previousElementSibling;
+                    if (prev) {
+                        prev.classList.add('highlighted');
+                    }
+                }
+            } else if (e.key === 'Enter' && highlighted) {
+                e.preventDefault();
+                highlighted.click();
+            }
+        });
     </script>
+
+    <style>
+        .suggestion-item.highlighted {
+            background-color: #e9ecef;
+        }
+    </style>
 @endsection

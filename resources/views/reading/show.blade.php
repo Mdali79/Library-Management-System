@@ -81,7 +81,7 @@
                         <div class="card-body">
                             @if($book->cover_image)
                                 <div class="text-center mb-3">
-                                    <img src="{{ asset('storage/' . $book->cover_image) }}" 
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $book->cover_image) }}" 
                                         alt="{{ $book->name }}" 
                                         style="max-width: 100%; max-height: 300px; border-radius: 4px;">
                                 </div>

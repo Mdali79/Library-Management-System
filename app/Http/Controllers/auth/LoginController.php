@@ -24,11 +24,19 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
             
+            // Check if user is verified (is_verified must be 1)
+            if (!$user->is_verified) {
+                Auth::logout();
+                return redirect()->back()->withErrors([
+                    'username' => 'Your account is not verified yet. Please wait for an Administrator to approve your registration. You will be able to login once your account is verified.'
+                ]);
+            }
+            
             // Check if registration is approved
             if ($user->registration_status == 'pending') {
                 Auth::logout();
                 return redirect()->back()->withErrors([
-                    'username' => 'Your account is pending approval. Please wait for an Administrator or Librarian to approve your registration.'
+                    'username' => 'Your account is pending approval. Please wait for an Administrator to approve your registration.'
                 ]);
             }
             
