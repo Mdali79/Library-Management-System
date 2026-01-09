@@ -75,17 +75,29 @@ class book extends Model
     /**
      * Get the cover image URL
      *
-     * @return string|null
+     * @return string
      */
     public function getCoverImageUrlAttribute()
     {
         if (!$this->cover_image) {
-            return null;
+            return asset('images/default-book-cover.png');
         }
 
-        // Use Storage::url which generates URL based on APP_URL from .env
-        // This will work correctly if APP_URL is set properly in .env file
-        return Storage::disk('public')->url($this->cover_image);
+        // Check if file exists in storage
+        if (Storage::disk('public')->exists($this->cover_image)) {
+            // Use Storage::url which generates URL based on APP_URL from .env
+            return Storage::disk('public')->url($this->cover_image);
+        }
+
+        // Fallback: try using asset() if Storage::url() doesn't work
+        // This handles cases where symlink exists but Storage::url() fails
+        $assetPath = 'storage/' . $this->cover_image;
+        if (file_exists(public_path($assetPath))) {
+            return asset($assetPath);
+        }
+
+        // Final fallback: return default image
+        return asset('images/default-book-cover.png');
     }
 
     /**

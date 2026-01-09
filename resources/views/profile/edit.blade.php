@@ -33,7 +33,7 @@
                             <label>Profile Picture</label>
                             <div class="mb-3">
                                 @if($user->profile_picture)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $user->profile_picture) }}" 
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}" 
                                         alt="{{ $user->name }}" 
                                         id="profile-preview"
                                         style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd;">
