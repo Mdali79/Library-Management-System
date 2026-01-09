@@ -45,7 +45,7 @@
 
             <!-- Main Statistics Cards -->
             <div class="row mb-4">
-                <div class="col-md-3 mb-4">
+                <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
                             <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
@@ -56,6 +56,7 @@
                         </div>
                     </div>
                 </div>
+                @if($role !== 'Student')
                 <div class="col-md-3 mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
@@ -67,25 +68,26 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
+                @endif
+                <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
                             <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
                                 <i class="fas fa-hand-holding"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $issued_books }}</h1>
-                            <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">Issued Books</h5>
+                            <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">{{ $role === 'Student' ? 'My Issued Books' : 'Issued Books' }}</h5>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3 mb-4">
+                <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
                             <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
                                 <i class="fas fa-undo"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $returned_books }}</h1>
-                            <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">Returned Books</h5>
+                            <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">{{ $role === 'Student' ? 'My Returned Books' : 'Returned Books' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -334,54 +336,138 @@
             }
         });
 
-        // Dashboard Search Suggestions
+        // Dashboard Search Suggestions - AJAX based
         const dashboardSearchInput = document.getElementById('dashboard-search-input');
         const dashboardSuggestionsDiv = document.getElementById('dashboard-suggestions');
-        const dashboardSuggestions = @json($search_suggestions ?? []);
+        let dashboardSuggestionTimeout = null;
+        const dashboardSuggestionsUrl = '{{ route("book.suggestions") }}';
 
+        // Show suggestions on focus
         dashboardSearchInput.addEventListener('focus', function() {
-            if (dashboardSuggestions.length > 0) {
-                showDashboardSuggestions();
-            }
+            fetchDashboardSuggestions('');
         });
 
+        // Fetch suggestions as user types
         dashboardSearchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            if (searchTerm.length > 0) {
-                const filtered = dashboardSuggestions.filter(s => s.toLowerCase().includes(searchTerm));
-                if (filtered.length > 0) {
-                    displayDashboardSuggestions(filtered);
-                } else {
-                    dashboardSuggestionsDiv.style.display = 'none';
-                }
-            } else {
-                showDashboardSuggestions();
+            const searchTerm = this.value.trim();
+            
+            // Clear previous timeout
+            if (dashboardSuggestionTimeout) {
+                clearTimeout(dashboardSuggestionTimeout);
             }
+            
+            // Debounce: wait 300ms after user stops typing
+            dashboardSuggestionTimeout = setTimeout(function() {
+                fetchDashboardSuggestions(searchTerm);
+            }, 300);
         });
 
-        function showDashboardSuggestions() {
-            displayDashboardSuggestions(dashboardSuggestions);
+        // Fetch suggestions from server
+        function fetchDashboardSuggestions(searchTerm) {
+            const url = dashboardSuggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(suggestions => {
+                    if (suggestions && suggestions.length > 0) {
+                        displayDashboardSuggestions(suggestions);
+                    } else {
+                        dashboardSuggestionsDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                    dashboardSuggestionsDiv.style.display = 'none';
+                });
         }
 
-        function displayDashboardSuggestions(items) {
+        function displayDashboardSuggestions(suggestions) {
             dashboardSuggestionsDiv.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.textContent = item;
-                div.addEventListener('click', function() {
-                    dashboardSearchInput.value = item;
-                    dashboardSuggestionsDiv.style.display = 'none';
-                    document.getElementById('dashboard-search-form').submit();
-                });
-                dashboardSuggestionsDiv.appendChild(div);
+            
+            // Group suggestions by type
+            const grouped = {};
+            suggestions.forEach(item => {
+                const type = item.type || 'other';
+                if (!grouped[type]) {
+                    grouped[type] = [];
+                }
+                grouped[type].push(item);
             });
+            
+            // Display grouped suggestions
+            Object.keys(grouped).forEach(type => {
+                const items = grouped[type];
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    
+                    const icon = document.createElement('span');
+                    icon.className = 'suggestion-icon';
+                    icon.textContent = item.icon || '🔍';
+                    
+                    const text = document.createElement('span');
+                    text.className = 'suggestion-text';
+                    text.textContent = item.text;
+                    
+                    const typeLabel = document.createElement('span');
+                    typeLabel.className = 'suggestion-type';
+                    typeLabel.textContent = item.type || '';
+                    
+                    div.appendChild(icon);
+                    div.appendChild(text);
+                    div.appendChild(typeLabel);
+                    
+                    div.addEventListener('click', function() {
+                        dashboardSearchInput.value = item.text;
+                        dashboardSuggestionsDiv.style.display = 'none';
+                        // Auto-submit form when suggestion is clicked
+                        document.getElementById('dashboard-search-form').submit();
+                    });
+                    
+                    dashboardSuggestionsDiv.appendChild(div);
+                });
+            });
+            
             dashboardSuggestionsDiv.style.display = 'block';
         }
 
+        // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
             if (!dashboardSearchInput.contains(e.target) && !dashboardSuggestionsDiv.contains(e.target)) {
                 dashboardSuggestionsDiv.style.display = 'none';
+            }
+        });
+
+        // Handle keyboard navigation
+        dashboardSearchInput.addEventListener('keydown', function(e) {
+            const visibleSuggestions = dashboardSuggestionsDiv.querySelectorAll('.suggestion-item');
+            const highlighted = dashboardSuggestionsDiv.querySelector('.suggestion-item.highlighted');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (highlighted) {
+                    highlighted.classList.remove('highlighted');
+                    const next = highlighted.nextElementSibling;
+                    if (next) {
+                        next.classList.add('highlighted');
+                    } else if (visibleSuggestions.length > 0) {
+                        visibleSuggestions[0].classList.add('highlighted');
+                    }
+                } else if (visibleSuggestions.length > 0) {
+                    visibleSuggestions[0].classList.add('highlighted');
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (highlighted) {
+                    highlighted.classList.remove('highlighted');
+                    const prev = highlighted.previousElementSibling;
+                    if (prev) {
+                        prev.classList.add('highlighted');
+                    }
+                }
+            } else if (e.key === 'Enter' && highlighted) {
+                e.preventDefault();
+                highlighted.click();
             }
         });
     </script>
@@ -402,12 +488,29 @@
             padding: 10px 15px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
         }
-        .suggestion-item:hover {
+        .suggestion-item:hover,
+        .suggestion-item.highlighted {
             background-color: #f8f9fa;
         }
         .suggestion-item:last-child {
             border-bottom: none;
+        }
+        .suggestion-icon {
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        .suggestion-text {
+            flex: 1;
+        }
+        .suggestion-type {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-left: auto;
+            text-transform: capitalize;
         }
     </style>
 @endsection

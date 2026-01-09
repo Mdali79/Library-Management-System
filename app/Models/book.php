@@ -73,6 +73,22 @@ class book extends Model
     }
 
     /**
+     * Get the cover image URL
+     *
+     * @return string|null
+     */
+    public function getCoverImageUrlAttribute()
+    {
+        if (!$this->cover_image) {
+            return null;
+        }
+
+        // Use Storage::url which generates URL based on APP_URL from .env
+        // This will work correctly if APP_URL is set properly in .env file
+        return Storage::disk('public')->url($this->cover_image);
+    }
+
+    /**
      * Get all authors for this book (many-to-many relationship)
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany

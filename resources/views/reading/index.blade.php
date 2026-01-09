@@ -60,7 +60,7 @@
                                     <!-- Book Cover -->
                                     <div class="text-center mb-3">
                                         @if($book->cover_image)
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $book->cover_image) }}" 
+                                            <img src="{{ $book->cover_image_url }}" 
                                                 alt="{{ $book->name }}" 
                                                 style="max-width: 150px; max-height: 200px; object-fit: cover; border-radius: 4px;">
                                         @else

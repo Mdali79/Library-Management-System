@@ -88,6 +88,81 @@
                             @enderror
                         </div>
 
+                        @if($user->role === 'Student')
+                        <div class="form-group">
+                            <label>Department</label>
+                            <select name="department" class="form-control @error('department') is-invalid @enderror">
+                                <option value="">Select Department</option>
+                                @php
+                                    $selectedDept = old('department', $user->department);
+                                @endphp
+                                <option value="Computer Science" {{ $selectedDept == 'Computer Science' ? 'selected' : '' }}>Computer Science</option>
+                                <option value="CSE" {{ $selectedDept == 'CSE' ? 'selected' : '' }}>CSE (Computer Science & Engineering)</option>
+                                <option value="Electrical Engineering" {{ $selectedDept == 'Electrical Engineering' ? 'selected' : '' }}>Electrical Engineering</option>
+                                <option value="Mechanical Engineering" {{ $selectedDept == 'Mechanical Engineering' ? 'selected' : '' }}>Mechanical Engineering</option>
+                                <option value="Civil Engineering" {{ $selectedDept == 'Civil Engineering' ? 'selected' : '' }}>Civil Engineering</option>
+                                <option value="Business Administration" {{ $selectedDept == 'Business Administration' ? 'selected' : '' }}>Business Administration</option>
+                                <option value="Mathematics" {{ $selectedDept == 'Mathematics' ? 'selected' : '' }}>Mathematics</option>
+                                <option value="Physics" {{ $selectedDept == 'Physics' ? 'selected' : '' }}>Physics</option>
+                                <option value="Chemistry" {{ $selectedDept == 'Chemistry' ? 'selected' : '' }}>Chemistry</option>
+                                <option value="English" {{ $selectedDept == 'English' ? 'selected' : '' }}>English</option>
+                                <option value="Economics" {{ $selectedDept == 'Economics' ? 'selected' : '' }}>Economics</option>
+                                <option value="Other" {{ $selectedDept == 'Other' ? 'selected' : '' }}>Other</option>
+                            </select>
+                            @error('department')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>Batch</label>
+                            <input type="text" class="form-control @error('batch') is-invalid @enderror"
+                                placeholder="Batch (e.g., 2021)" name="batch" value="{{ old('batch', $user->batch) }}">
+                            @error('batch')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>Roll No</label>
+                            <input type="text" class="form-control @error('roll') is-invalid @enderror"
+                                placeholder="Roll Number" name="roll" value="{{ old('roll', $user->roll) }}">
+                            @error('roll')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="form-group">
+                            <label>Registration No</label>
+                            <input type="text" class="form-control @error('reg_no') is-invalid @enderror"
+                                placeholder="Registration Number" name="reg_no" value="{{ old('reg_no', $user->reg_no) }}">
+                            @error('reg_no')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        @endif
+
+                        @if($user->role === 'Admin')
+                        <div class="form-group">
+                            <label>Department</label>
+                            <input type="text" class="form-control @error('department') is-invalid @enderror"
+                                placeholder="Department (Optional)" name="department" value="{{ old('department', $user->department) }}">
+                            @error('department')
+                                <div class="alert alert-danger" role="alert">
+                                    {{ $message }}
+                                </div>
+                            @enderror
+                        </div>
+                        @endif
+
                         <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">
                             <i class="fas fa-save"></i> Update Profile
                         </button>

@@ -34,7 +34,7 @@
                                         <div class="form-group" style="position: relative;">
                                             <label>Search (Name/ISBN/Author)</label>
                                             <input type="text" name="search" id="book-search-input" class="form-control"
-                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off">
+                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off" style="height: 2.5rem;">
                                             <div id="book-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                                         </div>
                                     </div>
@@ -93,8 +93,8 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>&nbsp;</label>
-                                            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.75rem;">
-                                                <i class="fas fa-search"></i>
+                                            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.75rem; height: 2.5rem;">
+                                                Search
                                             </button>
                                         </div>
                                     </div>
@@ -130,8 +130,9 @@
                                     <td class="id">{{ $book->id }}</td>
                                     <td>
                                         @if($book->cover_image)
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::url('public/' . $book->cover_image) }}"
-                                                alt="{{ $book->name }}" style="width: 50px; height: 70px; object-fit: cover;">
+                                            <img src="{{ $book->cover_image_url }}"
+                                                alt="{{ $book->name }}" style="width: 50px; height: 70px; object-fit: cover;"
+                                                onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'70\'%3E%3Crect width=\'50\' height=\'70\' fill=\'%23ddd\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';">
                                         @else
                                             <div style="width: 50px; height: 70px; background: #ddd; display: flex; align-items: center; justify-content: center;">
                                                 <small>No Image</small>
@@ -246,7 +247,7 @@
             border-bottom: 2px solid #dee2e6;
         }
 
-        /* Styles to ensure dropdown selected text stays on one line */
+        /* Styles to ensure dropdown selected text stays on one line and align with search input */
         .search-select,
         select.search-select,
         select.form-control.search-select,
@@ -268,6 +269,24 @@
             background-size: 1rem 1rem !important;
             font-size: 0.875rem !important;
             text-indent: 0 !important;
+        }
+
+        /* Ensure search input and button align with dropdowns */
+        #book-search-input {
+            height: 2.5rem !important;
+            line-height: 1.5 !important;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.875rem !important;
+        }
+
+        /* Align form groups vertically */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 0.5rem;
         }
 
         /* Dropdown options can wrap if needed */

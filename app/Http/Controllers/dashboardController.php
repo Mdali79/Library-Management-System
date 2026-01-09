@@ -27,13 +27,35 @@ class dashboardController extends Controller
             $studentRecord = student::where('user_id', $user->id)->first();
             $totalBooks = book::count(); // Students can see total books
             $totalMembers = 0; // Students don't see member count
-            $issuedBooksCount = $studentRecord ? book_issue::where('student_id', $studentRecord->id)
-                ->where('issue_status', 'N')
-                ->where('request_status', 'issued')
-                ->count() : 0;
-            $returnedBooksCount = $studentRecord ? book_issue::where('student_id', $studentRecord->id)
-                ->where('issue_status', 'Y')
-                ->count() : 0;
+            
+            // Calculate issued books: books that are currently issued (not returned)
+            // issue_status = 'N' means not returned, request_status = 'issued' means approved and issued
+            $issuedBooksCount = 0;
+            if ($studentRecord) {
+                $issuedBooksCount = book_issue::where('student_id', $studentRecord->id)
+                    ->where(function($query) {
+                        $query->where('issue_status', 'N')
+                              ->orWhereNull('issue_status');
+                    })
+                    ->where(function($query) {
+                        $query->where('request_status', 'issued')
+                              ->orWhere('request_status', 'approved');
+                    })
+                    ->count();
+            }
+            
+            // Calculate returned books: books that have been returned
+            // issue_status = 'Y' means returned, or return_day is not null
+            $returnedBooksCount = 0;
+            if ($studentRecord) {
+                $returnedBooksCount = book_issue::where('student_id', $studentRecord->id)
+                    ->where(function($query) {
+                        $query->where('issue_status', 'Y')
+                              ->orWhereNotNull('return_day');
+                    })
+                    ->count();
+            }
+            
             $pendingFinesCount = $studentRecord ? Fine::where('student_id', $studentRecord->id)
                 ->where('status', 'pending')
                 ->count() : 0;
@@ -43,10 +65,19 @@ class dashboardController extends Controller
         } else {
             $totalBooks = book::count();
             $totalMembers = student::count();
-            $issuedBooksCount = book_issue::where('issue_status', 'N')
-                ->where('request_status', 'issued')
-                ->count();
-            $returnedBooksCount = book_issue::where('issue_status', 'Y')->count();
+            $issuedBooksCount = book_issue::where(function($query) {
+                $query->where('issue_status', 'N')
+                      ->orWhereNull('issue_status');
+            })
+            ->where(function($query) {
+                $query->where('request_status', 'issued')
+                      ->orWhere('request_status', 'approved');
+            })
+            ->count();
+            $returnedBooksCount = book_issue::where(function($query) {
+                $query->where('issue_status', 'Y')
+                      ->orWhereNotNull('return_day');
+            })->count();
             $pendingFinesCount = Fine::where('status', 'pending')->count();
             $pendingFinesAmount = Fine::where('status', 'pending')->sum('amount');
         }

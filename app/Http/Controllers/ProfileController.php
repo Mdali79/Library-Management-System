@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use App\Models\student;
 
 class ProfileController extends Controller
 {
@@ -34,18 +35,40 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
         
-        $request->validate([
+        $validationRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'contact' => 'nullable|string|max:20',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        ];
+
+        // Add role-specific validation rules
+        if ($user->role === 'Student') {
+            $validationRules['department'] = 'nullable|string|max:255';
+            $validationRules['batch'] = 'nullable|string|max:50';
+            $validationRules['roll'] = 'nullable|string|max:50';
+            $validationRules['reg_no'] = 'nullable|string|max:50|unique:users,reg_no,' . $user->id;
+        } elseif ($user->role === 'Admin') {
+            $validationRules['department'] = 'nullable|string|max:255';
+        }
+
+        $request->validate($validationRules);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
             'contact' => $request->contact,
         ];
+
+        // Add role-specific fields
+        if ($user->role === 'Student') {
+            $data['department'] = $request->department;
+            $data['batch'] = $request->batch;
+            $data['roll'] = $request->roll;
+            $data['reg_no'] = $request->reg_no;
+        } elseif ($user->role === 'Admin') {
+            $data['department'] = $request->department;
+        }
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
@@ -61,6 +84,22 @@ class ProfileController extends Controller
         }
 
         $user->update($data);
+
+        // Update student record if user is a Student
+        if ($user->role === 'Student') {
+            $studentRecord = student::where('user_id', $user->id)->first();
+            if ($studentRecord) {
+                $studentRecord->update([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->contact,
+                    'department' => $user->department,
+                    'batch' => $user->batch,
+                    'roll' => $user->roll,
+                    'reg_no' => $user->reg_no,
+                ]);
+            }
+        }
 
         return redirect()->route('profile.show')->with('success', 'Profile updated successfully');
     }
