@@ -120,9 +120,9 @@
                                             @endif
                                         </td>
                                         <td class="delete">
-                                            @if($book->request_status == 'pending' || $book->request_status == 'rejected')
+                                            @if($book->issue_status != 'Y')
                                                 <form action="{{ route('book_issue.destroy', $book) }}" method="post" class="form-hidden">
-                                                    <button class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                                    <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this book issue?')">Delete</button>
                                                     @csrf
                                                 </form>
                                             @endif

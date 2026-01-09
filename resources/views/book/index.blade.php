@@ -32,9 +32,9 @@
                                 <div class="row">
                                     <div class="col-md-2">
                                         <div class="form-group" style="position: relative;">
-                                            <label>Search (Name/ISBN/Author)</label>
+                                            <label>Search</label>
                                             <input type="text" name="search" id="book-search-input" class="form-control"
-                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off" style="height: 2.5rem;">
+                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off">
                                             <div id="book-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                                         </div>
                                     </div>
@@ -93,7 +93,7 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>&nbsp;</label>
-                                            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.75rem; height: 2.5rem;">
+                                            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0;">
                                                 Search
                                             </button>
                                         </div>
@@ -279,14 +279,34 @@
             font-size: 0.875rem !important;
         }
 
-        /* Align form groups vertically */
+        /* Align form groups vertically and ensure consistent spacing */
         .form-group {
             display: flex;
             flex-direction: column;
+            margin-bottom: 0;
         }
 
         .form-group label {
             margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            height: 1.5rem;
+            line-height: 1.5rem;
+        }
+
+        /* Ensure all inputs and selects align at the same baseline */
+        .form-group input,
+        .form-group select,
+        .form-group button {
+            margin-top: 0;
+        }
+
+        /* Make sure button height matches input/select height */
+        .form-group button.btn-block {
+            height: 2.5rem !important;
+            line-height: 1.5 !important;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.875rem !important;
         }
 
         /* Dropdown options can wrap if needed */
