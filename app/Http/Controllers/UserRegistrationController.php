@@ -94,21 +94,32 @@ class UserRegistrationController extends Controller
             return redirect()->back()->withErrors(['error' => 'Access denied. Only Administrators can reject registrations.']);
         }
 
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ]);
+        try {
+            $request->validate([
+                'rejection_reason' => 'required|string|max:500',
+            ], [
+                'rejection_reason.required' => 'Please provide a reason for rejection.',
+                'rejection_reason.max' => 'Rejection reason cannot exceed 500 characters.',
+            ]);
 
-        $pendingUser = User::findOrFail($id);
-        
-        if ($pendingUser->registration_status != 'pending') {
-            return redirect()->back()->withErrors(['error' => 'This registration is not pending approval.']);
+            $pendingUser = User::findOrFail($id);
+            
+            if ($pendingUser->registration_status != 'pending') {
+                return redirect()->back()->withErrors(['error' => 'This registration is not pending approval.']);
+            }
+
+            // Reject the registration
+            $pendingUser->registration_status = 'rejected';
+            $pendingUser->rejection_reason = trim($request->rejection_reason);
+            $pendingUser->save();
+
+            return redirect()->route('registrations.pending')->with('success', 'Registration rejected successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'An error occurred while rejecting the registration. Please try again.']);
         }
-
-        // Reject the registration
-        $pendingUser->registration_status = 'rejected';
-        $pendingUser->rejection_reason = $request->rejection_reason;
-        $pendingUser->save();
-
-        return redirect()->route('registrations.pending')->with('success', 'Registration rejected successfully.');
     }
 }

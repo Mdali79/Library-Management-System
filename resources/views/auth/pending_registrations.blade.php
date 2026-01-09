@@ -68,27 +68,40 @@
                                 </tr>
 
                                 <!-- Reject Modal -->
-                                <div class="modal fade" id="rejectModal{{ $registration->id }}" tabindex="-1" role="dialog">
+                                <div class="modal fade" id="rejectModal{{ $registration->id }}" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel{{ $registration->id }}" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
-                                            <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
-                                                <h5 class="modal-title">Reject Registration</h5>
-                                                <button type="button" class="close" data-dismiss="modal" style="color: white;">
-                                                    <span>&times;</span>
-                                                </button>
-                                            </div>
-                                            <form action="{{ route('registrations.reject', $registration->id) }}" method="post">
+                                            <form action="{{ route('registrations.reject', $registration->id) }}" method="post" id="rejectForm{{ $registration->id }}">
                                                 @csrf
+                                                <div class="modal-header" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: white;">
+                                                    <h5 class="modal-title" id="rejectModalLabel{{ $registration->id }}">Reject Registration</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
                                                 <div class="modal-body">
+                                                    @if($errors->has('rejection_reason'))
+                                                        <div class="alert alert-danger">
+                                                            {{ $errors->first('rejection_reason') }}
+                                                        </div>
+                                                    @endif
                                                     <div class="form-group">
-                                                        <label>Rejection Reason <span class="text-danger">*</span></label>
-                                                        <textarea name="rejection_reason" class="form-control" rows="3" required 
-                                                            placeholder="Please provide a reason for rejection..."></textarea>
+                                                        <label for="rejection_reason{{ $registration->id }}">Rejection Reason <span class="text-danger">*</span></label>
+                                                        <textarea name="rejection_reason" id="rejection_reason{{ $registration->id }}" 
+                                                            class="form-control @error('rejection_reason') is-invalid @enderror" 
+                                                            rows="3" required 
+                                                            placeholder="Please provide a reason for rejection...">{{ old('rejection_reason') }}</textarea>
+                                                        @error('rejection_reason')
+                                                            <div class="text-danger mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                        <small class="form-text text-muted">This reason will be shown to the user if they try to login.</small>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-danger">Reject Registration</button>
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="fas fa-times"></i> Reject Registration
+                                                    </button>
                                                 </div>
                                             </form>
                                         </div>

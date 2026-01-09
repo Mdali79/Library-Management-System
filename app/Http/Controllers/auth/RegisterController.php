@@ -29,7 +29,7 @@ class RegisterController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
-            'email' => 'nullable|email|unique:users',
+            'email' => 'nullable|email:rfc,dns|max:255|unique:users',
             'contact' => 'nullable|string|max:20',
             'role' => 'required|in:Student,Admin',
             'password' => 'required|string|min:8|confirmed',
@@ -54,7 +54,7 @@ class RegisterController extends Controller
 
         $validator = Validator::make($request->all(), $rules);
 
-        // Custom validation message for department
+        // Custom validation message for department and email
         $validator->after(function ($validator) use ($request) {
             if ($request->role === 'Student') {
                 // Get department value - should come from the dropdown
@@ -62,6 +62,27 @@ class RegisterController extends Controller
                 // Check if it's empty, null, or the placeholder value
                 if (empty($department) || $department === '' || $department === null || trim($department) === '' || $department === 'Select Department') {
                     $validator->errors()->add('department', 'The department field is required. Please select a department from the dropdown.');
+                }
+            }
+            
+            // Additional email validation - ensure email is valid if provided
+            if ($request->filled('email')) {
+                $email = trim($request->input('email'));
+                // Check if email format is valid using filter_var
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $validator->errors()->add('email', 'Please enter a valid email address.');
+                } else {
+                    // Additional check for proper domain format
+                    $parts = explode('@', $email);
+                    if (count($parts) !== 2 || empty($parts[0]) || empty($parts[1]) || !strpos($parts[1], '.')) {
+                        $validator->errors()->add('email', 'Please enter a valid email address with a proper domain (e.g., user@example.com).');
+                    } else {
+                        // Check if domain exists and has MX records (can receive emails)
+                        $domain = $parts[1];
+                        if (!$this->validateEmailDomain($domain)) {
+                            $validator->errors()->add('email', 'The email domain does not exist or cannot receive emails. Please enter a valid email address.');
+                        }
+                    }
                 }
             }
         });
@@ -147,5 +168,38 @@ class RegisterController extends Controller
         }
 
         return redirect()->back()->withErrors(['verification_code' => 'Invalid verification code.']);
+    }
+
+    /**
+     * Validate if email domain exists and can receive emails
+     *
+     * @param string $domain
+     * @return bool
+     */
+    private function validateEmailDomain($domain)
+    {
+        // Check if domain is valid format
+        if (empty($domain) || !preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $domain)) {
+            return false;
+        }
+
+        // Check if domain has MX records (mail exchange records)
+        // This verifies the domain can receive emails
+        $mxRecords = [];
+        $hasMx = @getmxrr($domain, $mxRecords);
+        
+        // If no MX records, check if domain resolves (has A record)
+        // Some mail servers use A records instead of MX records
+        if (!$hasMx) {
+            // Check if domain resolves to an IP address
+            $ip = @gethostbyname($domain);
+            if ($ip === $domain) {
+                // Domain doesn't resolve to an IP (doesn't exist)
+                return false;
+            }
+        }
+
+        // Domain exists and can potentially receive emails
+        return true;
     }
 }
