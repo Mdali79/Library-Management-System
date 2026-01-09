@@ -171,7 +171,7 @@
                 if (data.error) {
                     addMessage(data.error, 'bot', 'error');
                 } else {
-                    addMessage(data.reply, 'bot', data.type, data.books);
+                    addMessage(data.reply, 'bot', data.type, data.books, data.questions);
                 }
             })
             .catch(error => {
@@ -182,7 +182,7 @@
             });
         }
 
-        function addMessage(text, sender, type = 'default', books = null) {
+        function addMessage(text, sender, type = 'default', books = null, questions = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}-message mb-3`;
             
@@ -192,7 +192,31 @@
             
             let content = '';
             
-            if (type === 'book_search' && books && books.length > 0) {
+            if (type === 'suggestions' && questions && questions.length > 0) {
+                // Format suggestions with clickable questions
+                const formattedText = text.replace(/\n/g, '<br>');
+                content = '<div class="message-content bg-white p-3 rounded" style="max-width: 80%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #ff9800;">';
+                content += `<p class="mb-3">${formattedText}</p>`;
+                content += '<div class="suggested-questions mt-3" style="border-top: 1px solid #dee2e6; padding-top: 15px;">';
+                content += '<p class="mb-2" style="font-weight: bold; color: #667eea;"><i class="fas fa-lightbulb"></i> Click on any question to ask:</p>';
+                questions.forEach((question, index) => {
+                    const escapedQuestion = question.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                    content += `<div class="question-item mb-2 p-2 rounded" style="background: #f8f9fa; cursor: pointer; transition: all 0.2s; border: 1px solid #dee2e6;" 
+                        onmouseover="this.style.background='#e9ecef'; this.style.borderColor='#667eea';" 
+                        onmouseout="this.style.background='#f8f9fa'; this.style.borderColor='#dee2e6';"
+                        onclick="askQuestion(${index})">
+                        <i class="fas fa-question-circle text-primary"></i> ${question}
+                    </div>`;
+                });
+                
+                // Store questions in a global array for the onclick handler
+                if (!window.suggestedQuestions) {
+                    window.suggestedQuestions = [];
+                }
+                window.suggestedQuestions = questions;
+                content += '</div>';
+                content += '</div>';
+            } else if (type === 'book_search' && books && books.length > 0) {
                 content = '<div class="message-content bg-white p-3 rounded" style="max-width: 80%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">';
                 content += '<p class="mb-3"><strong>📚 Book Search Results:</strong></p>';
                 
@@ -245,6 +269,14 @@
 
         // Focus input on load
         messageInput.focus();
+
+        // Function to ask a suggested question
+        function askQuestion(index) {
+            if (window.suggestedQuestions && window.suggestedQuestions[index]) {
+                messageInput.value = window.suggestedQuestions[index];
+                sendMessage();
+            }
+        }
     </script>
 @endsection
 

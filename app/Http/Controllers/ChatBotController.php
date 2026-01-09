@@ -114,10 +114,12 @@ class ChatBotController extends Controller
             }
         }
 
-        // Default reply
+        // Default reply - show available questions
+        $availableQuestions = $this->getAvailableQuestions($qaData);
         return response()->json([
-            'reply' => "I'm sorry, I couldn't find any information about that. You can:\n- Ask about CSE department books by name\n- Ask general library questions\n- Try: 'Is [book name] available?' or 'Show me [book name]'",
-            'type' => 'default'
+            'reply' => $availableQuestions,
+            'type' => 'suggestions',
+            'questions' => $this->getQuestionsList($qaData)
         ]);
     }
 
@@ -233,6 +235,40 @@ class ChatBotController extends Controller
         }
 
         return $bestMatch;
+    }
+
+    /**
+     * Get formatted list of available questions for suggestions
+     */
+    private function getAvailableQuestions($qaData)
+    {
+        $message = "I'm sorry, I couldn't find any information about that. 😔\n\n";
+        $message .= "Here are some questions you can ask me:\n\n";
+        
+        $questionNumber = 1;
+        foreach ($qaData as $qa) {
+            $message .= "{$questionNumber}. " . $qa['question'] . "\n";
+            $questionNumber++;
+        }
+        
+        $message .= "\n💡 You can also:\n";
+        $message .= "- Search for CSE books by name (e.g., 'Is Introduction to Algorithms available?')\n";
+        $message .= "- Search by author name\n";
+        $message .= "- Search by ISBN\n";
+        $message .= "- Ask about book availability\n\n";
+        $message .= "Please select one of the questions above or try a book search! 📚";
+        
+        return $message;
+    }
+
+    /**
+     * Get list of questions for frontend display
+     */
+    private function getQuestionsList($qaData)
+    {
+        return array_map(function($qa) {
+            return $qa['question'];
+        }, $qaData);
     }
 
     /**
