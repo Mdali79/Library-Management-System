@@ -198,7 +198,23 @@
                             <small id="password-match-message" class="form-text" style="display: none;"></small>
                         </div>
 
-                        <button type="submit" name="register" class="btn btn-danger btn-lg btn-block">
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input @error('terms') is-invalid @enderror"
+                                    name="terms" id="terms" value="1" required
+                                    style="margin-top: 0.3rem; cursor: pointer;">
+                                <label class="form-check-label" for="terms" style="cursor: pointer; color: #000; font-size: 0.95rem;">
+                                    <span class="text-danger">*</span> I agree to the Terms and Conditions and Privacy Policy
+                                </label>
+                                @error('terms')
+                                    <div class="alert alert-danger mt-2" role="alert">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <button type="submit" name="register" class="btn btn-danger btn-lg btn-block" id="registerBtn">
                             <i class="fas fa-user-plus"></i> Register
                         </button>
                         <div class="mt-3 text-center">
@@ -510,6 +526,15 @@
 
         // Enhanced form validation
         document.getElementById('registrationForm').addEventListener('submit', function(e) {
+            const termsChecked = document.getElementById('terms').checked;
+
+            if (!termsChecked) {
+                e.preventDefault();
+                alert('Please agree to the Terms and Conditions and Privacy Policy to continue.');
+                document.getElementById('terms').focus();
+                return false;
+            }
+
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('password_confirmation').value;
 

@@ -39,6 +39,7 @@ class RegisterController extends Controller
                 'confirmed',
                 'regex:/^(?=.*[A-Za-z]{2,})(?=.*[0-9]{2,}).{8,}$/',
             ],
+            'terms' => 'required|accepted',
         ];
 
         // Student requires student-specific fields
