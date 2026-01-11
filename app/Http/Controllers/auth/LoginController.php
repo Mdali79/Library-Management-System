@@ -20,23 +20,23 @@ class LoginController extends Controller
         $user = \App\Models\User::where('username', $request->username)->first();
 
         if ($user) {
-            // Check if user is verified (is_verified must be 1) BEFORE attempting authentication
-            if (!$user->is_verified) {
-                return redirect()->back()->withErrors([
-                    'username' => 'Your account is not verified yet. Please wait for an Administrator to approve your registration. You will be able to login once your account is verified.'
-                ])->withInput($request->only('username'));
-            }
-
-            // Check if registration is approved
+            // Check if registration is approved - this applies to BOTH Student and Admin
             if ($user->registration_status == 'pending') {
                 return redirect()->back()->withErrors([
-                    'username' => 'Your account is pending approval. Please wait for an Administrator to approve your registration.'
+                    'username' => 'Your account is pending approval. Please wait for an Administrator to approve your registration. You will be able to login once your account is approved.'
                 ])->withInput($request->only('username'));
             }
 
             if ($user->registration_status == 'rejected') {
                 return redirect()->back()->withErrors([
                     'username' => 'Your registration has been rejected. Please contact the administrator for more information.'
+                ])->withInput($request->only('username'));
+            }
+
+            // Check if user is verified (is_verified must be 1) - required for BOTH Student and Admin
+            if (!$user->is_verified) {
+                return redirect()->back()->withErrors([
+                    'username' => 'Your account is not verified yet. Please wait for an Administrator to approve your registration. You will be able to login once your account is verified.'
                 ])->withInput($request->only('username'));
             }
         }

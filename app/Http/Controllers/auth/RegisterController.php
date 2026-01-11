@@ -170,6 +170,7 @@ class RegisterController extends Controller
 
     /**
      * Verify user account
+     * Note: This only verifies email, but admin approval is still required for login
      */
     public function verify(Request $request)
     {
@@ -182,12 +183,15 @@ class RegisterController extends Controller
             ->first();
 
         if ($user) {
+            // Only set email verification, but keep registration_status as pending
+            // Admin approval is still required for both Student and Admin roles
             $user->is_verified = true;
             $user->email_verified_at = now();
             $user->verification_code = null;
+            // Do NOT change registration_status - it must remain 'pending' until admin approves
             $user->save();
 
-            return redirect()->route('login')->with('success', 'Account verified successfully! You can now login.');
+            return redirect()->route('login')->with('success', 'Email verified successfully! However, your account still requires administrator approval before you can login.');
         }
 
         return redirect()->back()->withErrors(['verification_code' => 'Invalid verification code.']);
