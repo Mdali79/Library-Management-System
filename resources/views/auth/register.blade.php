@@ -38,15 +38,15 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Email</label>
+                            <label>Email <span class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                                value="{{ old('email') }}"
+                                value="{{ old('email') }}" required
                                 pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
                                 title="Please enter a valid email address (e.g., user@example.com)">
                             @error('email')
                                 <div class="alert alert-danger">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">Leave empty if you don't have an email address</small>
+                            <small class="form-text text-muted">A verification code will be sent to this email address</small>
                         </div>
 
                         <div class="form-group">

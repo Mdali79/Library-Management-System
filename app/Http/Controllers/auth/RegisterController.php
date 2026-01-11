@@ -8,7 +8,10 @@ use App\Models\student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
+use App\Mail\OtpVerificationMail;
 
 class RegisterController extends Controller
 {
@@ -29,7 +32,7 @@ class RegisterController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users',
-            'email' => 'nullable|email:rfc,dns|max:255|unique:users',
+            'email' => 'required|email:rfc,dns|max:255|unique:users',
             'contact' => 'nullable|string|max:20',
             'role' => 'required|in:Student,Admin',
             'password' => [
@@ -88,23 +91,21 @@ class RegisterController extends Controller
                 }
             }
 
-            // Additional email validation - ensure email is valid if provided
-            if ($request->filled('email')) {
-                $email = trim($request->input('email'));
-                // Check if email format is valid using filter_var
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $validator->errors()->add('email', 'Please enter a valid email address.');
+            // Additional email validation - ensure email is valid
+            $email = trim($request->input('email'));
+            // Check if email format is valid using filter_var
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $validator->errors()->add('email', 'Please enter a valid email address.');
+            } else {
+                // Additional check for proper domain format
+                $parts = explode('@', $email);
+                if (count($parts) !== 2 || empty($parts[0]) || empty($parts[1]) || !strpos($parts[1], '.')) {
+                    $validator->errors()->add('email', 'Please enter a valid email address with a proper domain (e.g., user@example.com).');
                 } else {
-                    // Additional check for proper domain format
-                    $parts = explode('@', $email);
-                    if (count($parts) !== 2 || empty($parts[0]) || empty($parts[1]) || !strpos($parts[1], '.')) {
-                        $validator->errors()->add('email', 'Please enter a valid email address with a proper domain (e.g., user@example.com).');
-                    } else {
-                        // Check if domain exists and has MX records (can receive emails)
-                        $domain = $parts[1];
-                        if (!$this->validateEmailDomain($domain)) {
-                            $validator->errors()->add('email', 'The email domain does not exist or cannot receive emails. Please enter a valid email address.');
-                        }
+                    // Check if domain exists and has MX records (can receive emails)
+                    $domain = $parts[1];
+                    if (!$this->validateEmailDomain($domain)) {
+                        $validator->errors()->add('email', 'The email domain does not exist or cannot receive emails. Please enter a valid email address.');
                     }
                 }
             }
@@ -116,40 +117,131 @@ class RegisterController extends Controller
                 ->withInput();
         }
 
-        // Generate verification code
-        $verificationCode = Str::random(6);
+        // Generate 6-digit OTP
+        $otp = rand(100000, 999999);
+        $otpExpiresAt = Carbon::now()->addMinutes(15);
 
-        // All users (Student and Admin) require approval before they can login
-        // Set is_verified = 0 and registration_status = 'pending' for all new registrations
-        $registrationStatus = 'pending';
-        $isVerified = false;
-
-        // Create user
-        // For Admin, only save department if provided, other fields should be null
-        $userData = [
+        // Store registration data in session (don't create user yet)
+        $registrationData = [
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'contact' => $request->contact,
             'role' => $request->role,
-            'password' => Hash::make($request->password),
-            'verification_code' => $verificationCode,
-            'is_verified' => $isVerified,
-            'registration_status' => $registrationStatus,
+            'password' => $request->password, // Store plain password to hash later
         ];
 
         // Add role-specific fields
         if ($request->role === 'Student') {
-            // Student - all fields required
-            // Use department field (from dropdown), ignore admin_department
-            $userData['department'] = $request->department;
-            $userData['batch'] = $request->batch;
-            $userData['roll'] = $request->roll;
-            $userData['reg_no'] = $request->reg_no;
+            $registrationData['department'] = $request->department;
+            $registrationData['batch'] = $request->batch;
+            $registrationData['roll'] = $request->roll;
+            $registrationData['reg_no'] = $request->reg_no;
         } else {
-            // Admin - use admin_department if provided, otherwise null
-            // Ignore the student department field
-            $userData['department'] = $request->admin_department ?: null;
+            $registrationData['department'] = $request->admin_department ?: null;
+            $registrationData['batch'] = null;
+            $registrationData['roll'] = null;
+            $registrationData['reg_no'] = null;
+        }
+
+        // Store in session
+        session([
+            'registration_data' => $registrationData,
+            'otp_code' => $otp,
+            'otp_expires_at' => $otpExpiresAt->timestamp,
+        ]);
+
+        // Send OTP email
+        try {
+            Mail::to($request->email)->send(new OtpVerificationMail($otp, $request->name));
+        } catch (\Exception $e) {
+            // If email fails, clear session and show error
+            session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
+            return redirect()->back()
+                ->withErrors(['email' => 'Failed to send verification email. Please check your email address and try again.'])
+                ->withInput();
+        }
+
+        // Redirect to OTP verification page
+        return redirect()->route('verify.otp')->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
+    }
+
+    /**
+     * Show OTP verification page
+     */
+    public function showOtpVerification()
+    {
+        // Check if registration data exists in session
+        if (!session()->has('registration_data') || !session()->has('otp_code')) {
+            return redirect()->route('register')
+                ->withErrors(['error' => 'Your registration session has expired. Please register again.']);
+        }
+
+        $registrationData = session('registration_data');
+        $email = $registrationData['email'] ?? '';
+
+        // Mask email for display
+        $maskedEmail = $this->maskEmail($email);
+
+        return view('auth.verify_otp', [
+            'email' => $email,
+            'maskedEmail' => $maskedEmail,
+            'otpExpiresAt' => session('otp_expires_at'),
+        ]);
+    }
+
+    /**
+     * Verify OTP and create user account
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'otp' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+        ]);
+
+        // Check if registration data exists in session
+        if (!session()->has('registration_data') || !session()->has('otp_code')) {
+            return redirect()->route('register')
+                ->withErrors(['error' => 'Your registration session has expired. Please register again.']);
+        }
+
+        $storedOtp = session('otp_code');
+        $otpExpiresAt = session('otp_expires_at');
+        $registrationData = session('registration_data');
+
+        // Check if OTP is expired
+        if (Carbon::now()->timestamp > $otpExpiresAt) {
+            return redirect()->back()
+                ->withErrors(['otp' => 'The verification code has expired. Please request a new code.']);
+        }
+
+        // Verify OTP
+        if ($request->otp != $storedOtp) {
+            return redirect()->back()
+                ->withErrors(['otp' => 'Invalid verification code. Please check and try again.']);
+        }
+
+        // OTP is valid, create user account
+        $userData = [
+            'name' => $registrationData['name'],
+            'username' => $registrationData['username'],
+            'email' => $registrationData['email'],
+            'contact' => $registrationData['contact'],
+            'role' => $registrationData['role'],
+            'password' => Hash::make($registrationData['password']),
+            'is_verified' => true,
+            'email_verified_at' => now(),
+            'registration_status' => 'pending', // Still requires admin approval
+        ];
+
+        // Add role-specific fields
+        if ($registrationData['role'] === 'Student') {
+            $userData['department'] = $registrationData['department'];
+            $userData['batch'] = $registrationData['batch'];
+            $userData['roll'] = $registrationData['roll'];
+            $userData['reg_no'] = $registrationData['reg_no'];
+        } else {
+            $userData['department'] = $registrationData['department'];
             $userData['batch'] = null;
             $userData['roll'] = null;
             $userData['reg_no'] = null;
@@ -157,19 +249,88 @@ class RegisterController extends Controller
 
         $user = User::create($userData);
 
+        // Clear session data
+        session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
+
         // Student record will be created when admin approves the registration
         // (handled in UserRegistrationController::approve method)
 
-        // Here you would send verification email/SMS
-        // Mail::to($user->email)->send(new VerificationEmail($verificationCode));
-        // Or send SMS with OTP
-
-        // All registrations require approval
-        return redirect()->route('login')->with('success', 'Registration submitted successfully! Your account is pending approval from an Administrator. You will be notified once approved and can then login.');
+        return redirect()->route('login')
+            ->with('success', 'Email verified successfully! Your account has been created and is pending administrator approval. You will be able to login once approved.');
     }
 
     /**
-     * Verify user account
+     * Resend OTP
+     */
+    public function resendOtp()
+    {
+        // Check if registration data exists in session
+        if (!session()->has('registration_data')) {
+            return redirect()->route('register')
+                ->withErrors(['error' => 'Your registration session has expired. Please register again.']);
+        }
+
+        $registrationData = session('registration_data');
+
+        // Generate new OTP
+        $otp = rand(100000, 999999);
+        $otpExpiresAt = Carbon::now()->addMinutes(15);
+
+        // Update session with new OTP
+        session([
+            'otp_code' => $otp,
+            'otp_expires_at' => $otpExpiresAt->timestamp,
+        ]);
+
+        // Send new OTP email
+        try {
+            Mail::to($registrationData['email'])->send(new OtpVerificationMail($otp, $registrationData['name']));
+
+            return redirect()->back()
+                ->with('success', 'A new verification code has been sent to your email address.');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withErrors(['error' => 'Failed to send verification email. Please try again.']);
+        }
+    }
+
+    /**
+     * Mask email for display (e.g., user@example.com -> u***@e***.com)
+     */
+    private function maskEmail($email)
+    {
+        if (empty($email)) {
+            return '';
+        }
+
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return $email;
+        }
+
+        $username = $parts[0];
+        $domain = $parts[1];
+
+        // Mask username (show first character, mask rest)
+        $maskedUsername = strlen($username) > 1
+            ? substr($username, 0, 1) . str_repeat('*', min(3, strlen($username) - 1))
+            : $username;
+
+        // Mask domain (show first character of domain name)
+        $domainParts = explode('.', $domain);
+        if (count($domainParts) >= 2) {
+            $domainName = $domainParts[0];
+            $domainExt = implode('.', array_slice($domainParts, 1));
+            $maskedDomain = substr($domainName, 0, 1) . str_repeat('*', min(2, strlen($domainName) - 1)) . '.' . $domainExt;
+        } else {
+            $maskedDomain = substr($domain, 0, 1) . str_repeat('*', min(2, strlen($domain) - 1));
+        }
+
+        return $maskedUsername . '@' . $maskedDomain;
+    }
+
+    /**
+     * Verify user account (old method - kept for backward compatibility)
      * Note: This only verifies email, but admin approval is still required for login
      */
     public function verify(Request $request)

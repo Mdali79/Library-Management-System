@@ -8,6 +8,26 @@
                 </div>
             </div>
 
+            <!-- Pending Registrations Notification - Top Priority -->
+            @if(isset($pending_registrations) && $pending_registrations > 0)
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="alert alert-warning" style="border-left: 4px solid #f59e0b; margin-bottom: 0;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-clock"></i>
+                                <strong>{{ $pending_registrations }} Pending User Registration(s)</strong>
+                                waiting for approval
+                            </div>
+                            <a href="{{ route('registrations.pending') }}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-eye"></i> Review Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Dashboard Search Bar -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -142,26 +162,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Pending Registrations Card -->
-            @if(isset($pending_registrations) && $pending_registrations > 0)
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="alert alert-warning" style="border-left: 4px solid #f59e0b;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-user-clock"></i>
-                                <strong>{{ $pending_registrations }} Pending User Registration(s)</strong>
-                                waiting for approval
-                            </div>
-                            <a href="{{ route('registrations.pending') }}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-eye"></i> Review Now
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @endif
             @endif
 
             <!-- Monthly Activity Chart -->

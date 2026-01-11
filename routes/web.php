@@ -33,13 +33,20 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Registration routes
 Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])->name('register.store');
+
+// OTP Verification routes
+Route::get('/verify-otp', [App\Http\Controllers\Auth\RegisterController::class, 'showOtpVerification'])->name('verify.otp');
+Route::post('/verify-otp', [App\Http\Controllers\Auth\RegisterController::class, 'verifyOtp'])->name('verify.otp');
+Route::post('/resend-otp', [App\Http\Controllers\Auth\RegisterController::class, 'resendOtp'])->name('resend.otp');
+
+// Old verification route (kept for backward compatibility)
 Route::get('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify');
 Route::post('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify.store');
 
 
 Route::middleware(['auth', 'verified.user'])->group(function () {
-    Route::get('change-password',[dashboardController::class,'change_password_view'])->name('change_password_view');
-    Route::post('change-password',[dashboardController::class,'change_password'])->name('change_password');
+    Route::get('change-password', [dashboardController::class, 'change_password_view'])->name('change_password_view');
+    Route::post('change-password', [dashboardController::class, 'change_password'])->name('change_password');
     Route::get('/dashboard', [dashboardController::class, 'index'])->name('dashboard');
 
     // author CRUD
@@ -95,7 +102,7 @@ Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::post('/book-issue/update/{id}', [BookIssueController::class, 'update'])->name('book_issue.update');
     Route::post('/book-issue/delete/{id}', [BookIssueController::class, 'destroy'])->name('book_issue.destroy');
     Route::post('/book-issue/create', [BookIssueController::class, 'store'])->name('book_issue.store');
-    
+
     // Pending requests and approval (Librarian only)
     Route::get('/book-issue/pending', [BookIssueController::class, 'pendingRequests'])->name('book_issue.pending');
     Route::post('/book-issue/approve/{id}', [BookIssueController::class, 'approveRequest'])->name('book_issue.approve');
