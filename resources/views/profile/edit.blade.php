@@ -120,8 +120,20 @@
 
                         <div class="form-group">
                             <label>Batch</label>
-                            <input type="text" class="form-control @error('batch') is-invalid @enderror"
-                                placeholder="Batch (e.g., 2021)" name="batch" value="{{ old('batch', $user->batch) }}">
+                            <select name="batch" class="form-control @error('batch') is-invalid @enderror">
+                                <option value="">Select Batch</option>
+                                @php
+                                    $selectedBatch = old('batch', $user->batch);
+                                    $batches = [];
+                                    // Generate batches from 90th to 120th
+                                    for ($i = 90; $i <= 120; $i++) {
+                                        $batches[] = $i . 'th';
+                                    }
+                                @endphp
+                                @foreach($batches as $batch)
+                                    <option value="{{ $batch }}" {{ $selectedBatch == $batch ? 'selected' : '' }}>{{ $batch }}</option>
+                                @endforeach
+                            </select>
                             @error('batch')
                                 <div class="alert alert-danger" role="alert">
                                     {{ $message }}
