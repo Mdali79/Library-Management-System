@@ -9,7 +9,10 @@
                     </h2>
                 </div>
                 <div class="col-md-6 text-right">
-                    <a class="add-new" href="{{ route('book_issued') }}">
+                    <a class="add-new" href="{{ route('book_issue.create') }}" style="margin-right: 10px;">
+                        <i class="fas fa-hand-holding"></i> Request Book
+                    </a>
+                    <a class="add-new" href="{{ route('book_issued') }}" style="background: linear-gradient(135deg, #10b981, #059669);">
                         <i class="fas fa-list"></i> My Requests
                     </a>
                 </div>
@@ -53,7 +56,7 @@
                                         $authorsText = $bookAuthors->pluck('name')->join(', ');
                                     @endphp
                                     <option value='{{ $book->id }}' {{ old('book_id') == $book->id ? 'selected' : '' }}>
-                                        {{ $book->name }} 
+                                        {{ $book->name }}
                                         @if($authorsText)
                                             - {{ $authorsText }}
                                         @endif
@@ -72,8 +75,8 @@
                             @enderror
                         </div>
                         <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Note:</strong> Your request will be sent to the librarian for approval. 
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> Your request will be sent to the librarian for approval.
                             You will be notified once it's approved or rejected.
                         </div>
                         <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">

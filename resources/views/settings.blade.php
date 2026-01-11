@@ -25,8 +25,8 @@
                             <div class="card-body" style="background: #ffffff;">
                                 <div class="form-group">
                                     <label>Return Days <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="return_days" 
-                                        value="{{ old('return_days', $data->return_days ?? 14) }}" 
+                                    <input type="number" class="form-control" name="return_days"
+                                        value="{{ old('return_days', $data->return_days ?? 14) }}"
                                         min="1" max="365" required>
                                     <small class="form-text text-muted">Number of days a book can be borrowed</small>
                                     @error('return_days')
@@ -36,11 +36,11 @@
                                     @enderror
                                 </div>
                                 <div class="form-group">
-                                    <label>Fine Per Day (in $) <span class="text-danger">*</span></label>
-                                    <input type="number" step="0.01" class="form-control" name="fine_per_day" 
-                                        value="{{ old('fine_per_day', $data->fine_per_day ?? 0) }}" 
+                                    <label>Fine Per Day (in tk) <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control" name="fine_per_day"
+                                        value="{{ old('fine_per_day', $data->fine_per_day ?? 0) }}"
                                         min="0" required>
-                                    <small class="form-text text-muted">Fine amount charged per day after grace period</small>
+                                    <small class="form-text text-muted">Fine amount charged per day after grace period (in tk)</small>
                                     @error('fine_per_day')
                                         <div class="alert alert-danger" role="alert">
                                             {{ $message }}
@@ -49,8 +49,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Fine Grace Period (Days) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="fine_grace_period_days" 
-                                        value="{{ old('fine_grace_period_days', $data->fine_grace_period_days ?? 14) }}" 
+                                    <input type="number" class="form-control" name="fine_grace_period_days"
+                                        value="{{ old('fine_grace_period_days', $data->fine_grace_period_days ?? 14) }}"
                                         min="0" max="30" required>
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle"></i> <strong>Fine calculation starts AFTER this many days past the return date.</strong><br>
@@ -74,8 +74,8 @@
                             <div class="card-body" style="background: #ffffff;">
                                 <div class="form-group">
                                     <label>Max Books - Students <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="max_borrowing_limit_student" 
-                                        value="{{ old('max_borrowing_limit_student', $data->max_borrowing_limit_student ?? 5) }}" 
+                                    <input type="number" class="form-control" name="max_borrowing_limit_student"
+                                        value="{{ old('max_borrowing_limit_student', $data->max_borrowing_limit_student ?? 5) }}"
                                         min="1" max="50" required>
                                     @error('max_borrowing_limit_student')
                                         <div class="alert alert-danger" role="alert">
@@ -85,8 +85,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Max Books - Admin <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="max_borrowing_limit_admin" 
-                                        value="{{ old('max_borrowing_limit_admin', $data->max_borrowing_limit_admin ?? 10) }}" 
+                                    <input type="number" class="form-control" name="max_borrowing_limit_admin"
+                                        value="{{ old('max_borrowing_limit_admin', $data->max_borrowing_limit_admin ?? 10) }}"
                                         min="1" max="50" required>
                                     @error('max_borrowing_limit_admin')
                                         <div class="alert alert-danger" role="alert">
@@ -96,14 +96,14 @@
                                 </div>
                                 <div class="form-group" style="display: none;">
                                     <label>Max Books - Teachers (Deprecated) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="max_borrowing_limit_teacher" 
-                                        value="{{ old('max_borrowing_limit_teacher', $data->max_borrowing_limit_teacher ?? 10) }}" 
+                                    <input type="number" class="form-control" name="max_borrowing_limit_teacher"
+                                        value="{{ old('max_borrowing_limit_teacher', $data->max_borrowing_limit_teacher ?? 10) }}"
                                         min="1" max="50">
                                 </div>
                                 <div class="form-group" style="display: none;">
                                     <label>Max Books - Librarians (Deprecated) <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" name="max_borrowing_limit_librarian" 
-                                        value="{{ old('max_borrowing_limit_librarian', $data->max_borrowing_limit_librarian ?? 15) }}" 
+                                    <input type="number" class="form-control" name="max_borrowing_limit_librarian"
+                                        value="{{ old('max_borrowing_limit_librarian', $data->max_borrowing_limit_librarian ?? 15) }}"
                                         min="1" max="50" required>
                                     @error('max_borrowing_limit_librarian')
                                         <div class="alert alert-danger" role="alert">

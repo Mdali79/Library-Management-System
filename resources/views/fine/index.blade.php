@@ -37,7 +37,7 @@
                 <div class="col-md-4">
                     <div class="card text-center bg-warning text-white">
                         <div class="card-body">
-                            <h3>${{ number_format($pendingFines, 2) }}</h3>
+                            <h3>{{ number_format($pendingFines, 2) }} tk</h3>
                             <h5>Pending Fines</h5>
                         </div>
                     </div>
@@ -45,7 +45,7 @@
                 <div class="col-md-4">
                     <div class="card text-center bg-success text-white">
                         <div class="card-body">
-                            <h3>${{ number_format($paidFines, 2) }}</h3>
+                            <h3>{{ number_format($paidFines, 2) }} tk</h3>
                             <h5>Paid Fines</h5>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                 <div class="col-md-4">
                     <div class="card text-center bg-info text-white">
                         <div class="card-body">
-                            <h3>${{ number_format($totalFines, 2) }}</h3>
+                            <h3>{{ number_format($totalFines, 2) }} tk</h3>
                             <h5>Total Fines</h5>
                         </div>
                     </div>
@@ -75,7 +75,7 @@
                             </div>
                             @if($role === 'Admin')
                                 <div class="col-md-3">
-                                    <input type="text" name="student_id" class="form-control" 
+                                    <input type="text" name="student_id" class="form-control"
                                         placeholder="Student ID" value="{{ request('student_id') }}">
                                 </div>
                             @endif
@@ -109,7 +109,7 @@
                                     <td>{{ $fine->student->name ?? 'N/A' }}</td>
                                     <td>{{ $fine->bookIssue->book->name ?? 'N/A' }}</td>
                                     <td>{{ $fine->days_overdue }} days</td>
-                                    <td>${{ number_format($fine->amount, 2) }}</td>
+                                    <td>{{ number_format($fine->amount, 2) }} tk</td>
                                     <td>
                                         @if($fine->status == 'pending')
                                             <span class="badge badge-warning">Pending</span>
@@ -129,18 +129,18 @@
                                                     $canPay = $student && $fine->student_id == $student->id;
                                                 @endphp
                                                 @if($canPay)
-                                                    <button type="button" class="btn btn-sm btn-primary" 
+                                                    <button type="button" class="btn btn-sm btn-primary"
                                                         data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
                                                 @else
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             @else
                                                 {{-- Admin can pay any fine --}}
-                                                <button type="button" class="btn btn-sm btn-primary" 
+                                                <button type="button" class="btn btn-sm btn-primary"
                                                     data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
                                                 <form action="{{ route('fines.waive', $fine->id) }}" method="POST" style="display: inline;">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-secondary" 
+                                                    <button type="submit" class="btn btn-sm btn-secondary"
                                                         onclick="return confirm('Are you sure you want to waive this fine?')">
                                                         <i class="fas fa-hand-holding-heart"></i> Waive
                                                     </button>
@@ -163,7 +163,7 @@
                                             <form action="{{ route('fines.pay', $fine->id) }}" method="POST">
                                                 @csrf
                                                 <div class="modal-body">
-                                                    <p><strong>Amount:</strong> ${{ number_format($fine->amount, 2) }}</p>
+                                                    <p><strong>Amount:</strong> {{ number_format($fine->amount, 2) }} tk</p>
                                                     <div class="form-group">
                                                         <label>Payment Method <span class="text-danger">*</span></label>
                                                         <select name="payment_method" class="form-control" required>

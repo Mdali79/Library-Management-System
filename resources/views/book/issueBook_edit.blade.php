@@ -73,7 +73,7 @@
                                     @if($bookIssue->fine_amount > 0)
                                     <tr>
                                         <th>Fine Paid:</th>
-                                        <td><b>${{ number_format($bookIssue->fine_amount, 2) }}</b></td>
+                                        <td><b>{{ number_format($bookIssue->fine_amount, 2) }} tk</b></td>
                                     </tr>
                                     @endif
                                 @else
@@ -85,7 +85,7 @@
                                     @if($fine > 0)
                                     <tr class="table-danger">
                                         <th>Fine Amount:</th>
-                                        <td><b>${{ number_format($fine, 2) }}</b></td>
+                                        <td><b>{{ number_format($fine, 2) }} tk</b></td>
                                     </tr>
                                     @else
                                     <tr class="table-success">
@@ -124,12 +124,12 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Damage/Loss Notes</label>
-                                        <textarea name="damage_notes" class="form-control" rows="3" 
+                                        <textarea name="damage_notes" class="form-control" rows="3"
                                             placeholder="Describe any damage or loss details...">{{ old('damage_notes') }}</textarea>
                                     </div>
                                     @if($fine > 0)
                                     <div class="alert alert-warning">
-                                        <strong>Fine to be charged: ${{ number_format($fine, 2) }}</strong><br>
+                                        <strong>Fine to be charged: {{ number_format($fine, 2) }} tk</strong><br>
                                         <small>Fine will be automatically added to the member's account.</small>
                                     </div>
                                     @endif

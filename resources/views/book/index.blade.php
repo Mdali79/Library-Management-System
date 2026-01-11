@@ -28,13 +28,54 @@
                             </h5>
                         </div>
                         <div class="card-body" style="background: #ffffff;">
-                            <form method="GET" action="{{ route('books') }}">
+                            <form method="GET" action="{{ route('books') }}" id="book-search-form">
+                                <!-- Active Filters Display -->
+                                @if(!empty(array_filter($filters ?? [])))
+                                <div class="mb-3" id="active-filters">
+                                    <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+                                        <small class="text-muted" style="font-weight: 600;">Active Filters:</small>
+                                        @if(!empty($filters['search']))
+                                        <span class="badge badge-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            Search: {{ $filters['search'] }}
+                                            <button type="button" class="btn-close-filter" data-filter="search" style="background: none; border: none; color: white; margin-left: 6px; font-size: 1rem; cursor: pointer; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+                                        </span>
+                                        @endif
+                                        @if(!empty($filters['category']))
+                                        <span class="badge badge-info" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            Category: {{ $categories->where('id', $filters['category'])->first()->name ?? 'N/A' }}
+                                            <button type="button" class="btn-close-filter" data-filter="category" style="background: none; border: none; color: white; margin-left: 6px; font-size: 1rem; cursor: pointer; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+                                        </span>
+                                        @endif
+                                        @if(!empty($filters['author']))
+                                        <span class="badge badge-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            Author: {{ $authors->where('id', $filters['author'])->first()->name ?? 'N/A' }}
+                                            <button type="button" class="btn-close-filter" data-filter="author" style="background: none; border: none; color: white; margin-left: 6px; font-size: 1rem; cursor: pointer; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+                                        </span>
+                                        @endif
+                                        @if(!empty($filters['publisher']))
+                                        <span class="badge badge-warning" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            Publisher: {{ $publishers->where('id', $filters['publisher'])->first()->name ?? 'N/A' }}
+                                            <button type="button" class="btn-close-filter" data-filter="publisher" style="background: none; border: none; color: white; margin-left: 6px; font-size: 1rem; cursor: pointer; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+                                        </span>
+                                        @endif
+                                        @if(!empty($filters['status']))
+                                        <span class="badge badge-{{ $filters['status'] == 'available' ? 'success' : 'danger' }}" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                            Status: {{ ucfirst($filters['status']) }}
+                                            <button type="button" class="btn-close-filter" data-filter="status" style="background: none; border: none; color: white; margin-left: 6px; font-size: 1rem; cursor: pointer; opacity: 0.8;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">×</button>
+                                        </span>
+                                        @endif
+                                        <a href="{{ route('books') }}" class="btn btn-sm btn-outline-secondary" style="font-size: 0.85rem;">
+                                            <i class="fas fa-times"></i> Clear All
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
                                 <div class="row">
-                                    <div class="col-md-2">
+                                    <div class="col-md-3">
                                         <div class="form-group" style="position: relative;">
                                             <label>Search</label>
                                             <input type="text" name="search" id="book-search-input" class="form-control"
-                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search..." autocomplete="off">
+                                                value="{{ $filters['search'] ?? '' }}" placeholder="Search books, authors..." autocomplete="off">
                                             <div id="book-suggestions" class="suggestions-dropdown" style="display: none;"></div>
                                         </div>
                                     </div>
@@ -93,9 +134,16 @@
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label>&nbsp;</label>
-                                            <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0;">
-                                                Search
-                                            </button>
+                                            <div class="d-flex" style="gap: 5px;">
+                                                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0; flex: 1;">
+                                                    <i class="fas fa-search"></i> Search
+                                                </button>
+                                                @if(!empty(array_filter($filters ?? [])))
+                                                <a href="{{ route('books') }}" class="btn btn-outline-secondary" style="margin-top: 0; padding: 0.5rem 0.75rem;" title="Clear all filters">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -203,48 +251,86 @@
         .suggestions-dropdown {
             position: absolute;
             background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 200px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 400px;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 1050;
             width: 100%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 350px;
+            max-width: 600px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
+            margin-top: 4px;
+            top: 100%;
+            left: 0;
         }
         .suggestion-item {
-            padding: 10px 15px;
+            padding: 12px 18px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            min-height: 48px;
         }
-        .suggestion-item:hover {
-            background-color: #f8f9fa;
+        .suggestion-item:hover,
+        .suggestion-item.highlighted {
+            background: linear-gradient(90deg, #e7f3ff 0%, #f0f8ff 100%);
+            border-left: 4px solid #2563eb;
+            padding-left: 14px;
+            transform: translateX(2px);
         }
         .suggestion-item:last-child {
             border-bottom: none;
         }
         .suggestion-icon {
-            margin-right: 10px;
-            font-size: 1.1em;
+            margin-right: 12px;
+            font-size: 1.2em;
+            width: 24px;
+            text-align: center;
         }
         .suggestion-text {
             flex: 1;
+            font-size: 0.95rem;
+            color: #333;
+            font-weight: 500;
         }
         .suggestion-type {
-            font-size: 0.85em;
+            font-size: 0.75em;
             color: #6c757d;
             margin-left: auto;
             text-transform: capitalize;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-weight: 500;
         }
         .suggestions-header {
-            padding: 8px 15px;
-            background-color: #f8f9fa;
-            font-weight: 600;
-            font-size: 0.9em;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: 700;
+            font-size: 0.85em;
             color: #495057;
             border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
 
         /* Styles to ensure dropdown selected text stays on one line and align with search input */
@@ -333,10 +419,15 @@
 
         // Show suggestions on focus
         bookSearchInput.addEventListener('focus', function() {
-            fetchSuggestions('');
+            const searchTerm = this.value.trim();
+            if (searchTerm.length > 0) {
+                fetchSuggestions(searchTerm);
+            } else {
+                fetchSuggestions('');
+            }
         });
 
-        // Fetch suggestions as user types
+        // Fetch suggestions as user types - immediate response
         bookSearchInput.addEventListener('input', function() {
             const searchTerm = this.value.trim();
 
@@ -345,10 +436,35 @@
                 clearTimeout(suggestionTimeout);
             }
 
-            // Debounce: wait 300ms after user stops typing
-            suggestionTimeout = setTimeout(function() {
+            // If user just started typing (first character), show suggestions immediately
+            if (searchTerm.length === 1) {
                 fetchSuggestions(searchTerm);
-            }, 300);
+            } else if (searchTerm.length > 1) {
+                // For subsequent characters, use shorter debounce (150ms) for faster response
+                suggestionTimeout = setTimeout(function() {
+                    fetchSuggestions(searchTerm);
+                }, 150);
+            } else {
+                // If input is cleared, show popular suggestions
+                fetchSuggestions('');
+            }
+        });
+
+        // Also trigger on keydown for immediate feedback
+        bookSearchInput.addEventListener('keydown', function(e) {
+            // Don't interfere with arrow keys, enter, escape
+            if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+                return;
+            }
+
+            const searchTerm = this.value.trim();
+            // If user is typing a character, show suggestions immediately
+            if (searchTerm.length >= 1 && e.key.length === 1) {
+                clearTimeout(suggestionTimeout);
+                suggestionTimeout = setTimeout(function() {
+                    fetchSuggestions(searchTerm + e.key);
+                }, 100);
+            }
         });
 
         // Fetch suggestions from server
@@ -373,6 +489,11 @@
         function displayBookSuggestions(suggestions) {
             bookSuggestionsDiv.innerHTML = '';
 
+            if (!suggestions || suggestions.length === 0) {
+                bookSuggestionsDiv.style.display = 'none';
+                return;
+            }
+
             // Group suggestions by type
             const grouped = {};
             suggestions.forEach(item => {
@@ -383,9 +504,25 @@
                 grouped[type].push(item);
             });
 
-            // Display grouped suggestions
+            // Type labels mapping
+            const typeLabels = {
+                'book': '📚 Books',
+                'author': '✍️ Authors',
+                'category': '📂 Categories',
+                'publisher': '🏢 Publishers',
+                'isbn': '🔢 ISBN'
+            };
+
+            // Display grouped suggestions with headers
             Object.keys(grouped).forEach(type => {
                 const items = grouped[type];
+
+                // Add header for each type
+                const header = document.createElement('div');
+                header.className = 'suggestions-header';
+                header.textContent = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1);
+                bookSuggestionsDiv.appendChild(header);
+
                 items.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
@@ -398,19 +535,14 @@
                     text.className = 'suggestion-text';
                     text.textContent = item.text;
 
-                    const typeLabel = document.createElement('span');
-                    typeLabel.className = 'suggestion-type';
-                    typeLabel.textContent = item.type || '';
-
                     div.appendChild(icon);
                     div.appendChild(text);
-                    div.appendChild(typeLabel);
 
                     div.addEventListener('click', function() {
                         bookSearchInput.value = item.text;
+                        bookSearchInput.focus();
                         bookSuggestionsDiv.style.display = 'none';
-                        // Auto-submit form when suggestion is clicked
-                        document.querySelector('form[method="GET"]').submit();
+                        // Don't auto-submit - let user review and click search button
                     });
 
                     bookSuggestionsDiv.appendChild(div);
@@ -454,10 +586,38 @@
                         prev.classList.add('highlighted');
                     }
                 }
-            } else if (e.key === 'Enter' && highlighted) {
-                e.preventDefault();
-                highlighted.click();
+            } else if (e.key === 'Enter') {
+                if (highlighted) {
+                    e.preventDefault();
+                    highlighted.click();
+                } else {
+                    // Submit form on Enter if no suggestion is highlighted
+                    document.getElementById('book-search-form').submit();
+                }
+            } else if (e.key === 'Escape') {
+                bookSuggestionsDiv.style.display = 'none';
             }
+        });
+
+        // Handle filter removal
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.btn-close-filter').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const filterName = this.getAttribute('data-filter');
+                    const form = document.getElementById('book-search-form');
+
+                    if (filterName === 'search') {
+                        document.getElementById('book-search-input').value = '';
+                    } else {
+                        const select = form.querySelector('[name="' + filterName + '"]');
+                        if (select) {
+                            select.value = '';
+                        }
+                    }
+
+                    form.submit();
+                });
+            });
         });
     </script>
 

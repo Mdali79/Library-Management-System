@@ -33,21 +33,23 @@
                             <label>Profile Picture</label>
                             <div class="mb-3">
                                 @if($user->profile_picture)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}" 
-                                        alt="{{ $user->name }}" 
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
+                                        alt="{{ $user->name }}"
                                         id="profile-preview"
-                                        style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd;">
+                                        class="profile-image-clickable"
+                                        style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
                                 @else
-                                    <div id="profile-preview" style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd;">
-                                        <span style="font-size: 3rem; color: white;">
+                                    <div id="profile-preview" class="profile-image-clickable"
+                                        style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
+                                        <span style="font-size: 4rem; color: white;">
                                             <i class="fas fa-user"></i>
                                         </span>
                                     </div>
                                 @endif
                             </div>
-                            <input type="file" class="form-control @error('profile_picture') is-invalid @enderror" 
-                                name="profile_picture" id="profile_picture" accept="image/*" onchange="previewImage(this)">
-                            <small class="form-text text-muted">Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
+                            <input type="file" class="form-control @error('profile_picture') is-invalid @enderror"
+                                name="profile_picture" id="profile_picture" accept="image/*" style="display: none;">
+                            <small class="form-text text-muted">Click on the image above to upload. Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
                             @error('profile_picture')
                                 <div class="alert alert-danger" role="alert">
                                     {{ $message }}
@@ -173,25 +175,114 @@
     </div>
 
     <script>
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('profile-preview');
-                    if (preview.tagName === 'IMG') {
-                        preview.src = e.target.result;
+        (function() {
+            let initialized = false;
+            let retryCount = 0;
+            const maxRetries = 10;
+
+            // Wait for DOM to be ready
+            function initializeProfileUpload() {
+                // Prevent multiple initializations
+                if (initialized) {
+                    return;
+                }
+
+                const profileInput = document.getElementById('profile_picture');
+                const profilePreview = document.getElementById('profile-preview');
+
+                if (!profileInput || !profilePreview) {
+                    // Retry if elements not found (with limit)
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        setTimeout(initializeProfileUpload, 100);
+                    }
+                    return;
+                }
+
+                // Mark as initialized to prevent duplicate listeners
+                initialized = true;
+
+                // Function to trigger file input
+                function triggerFileInput(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const input = document.getElementById('profile_picture');
+                    if (input) {
+                        input.click();
+                    }
+                }
+
+                // Function to handle hover effects
+                function handleHover(e) {
+                    if (e.type === 'mouseenter') {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
                     } else {
-                        // Replace div with img
-                        const img = document.createElement('img');
-                        img.id = 'profile-preview';
-                        img.src = e.target.result;
-                        img.style.cssText = 'width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd;';
-                        preview.parentNode.replaceChild(img, preview);
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = 'none';
+                    }
+                }
+
+                // Attach click event to preview (only if not already attached)
+                if (!profilePreview.hasAttribute('data-listener-attached')) {
+                    profilePreview.setAttribute('data-listener-attached', 'true');
+                    profilePreview.addEventListener('click', triggerFileInput);
+                    profilePreview.addEventListener('mouseenter', handleHover);
+                    profilePreview.addEventListener('mouseleave', handleHover);
+                }
+
+                // Handle file input change
+                profileInput.addEventListener('change', function(e) {
+                    previewImage(this);
+                }, { once: false });
+
+                // Preview image function
+                window.previewImage = function(input) {
+                    if (input.files && input.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const preview = document.getElementById('profile-preview');
+                            if (!preview) return;
+
+                            if (preview.tagName === 'IMG') {
+                                preview.src = e.target.result;
+                            } else {
+                                // Replace div with img
+                                const img = document.createElement('img');
+                                img.id = 'profile-preview';
+                                img.className = 'profile-image-clickable';
+                                img.src = e.target.result;
+                                img.alt = '{{ $user->name }}';
+                                img.style.cssText = 'width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;';
+
+                                // Reattach event listeners to new image
+                                img.setAttribute('data-listener-attached', 'true');
+                                img.addEventListener('click', triggerFileInput);
+                                img.addEventListener('mouseenter', handleHover);
+                                img.addEventListener('mouseleave', handleHover);
+
+                                preview.parentNode.replaceChild(img, preview);
+                            }
+                        };
+                        reader.readAsDataURL(input.files[0]);
                     }
                 };
-                reader.readAsDataURL(input.files[0]);
             }
-        }
+
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeProfileUpload);
+            } else {
+                initializeProfileUpload();
+            }
+
+            // Fallback: try again after a short delay
+            setTimeout(function() {
+                if (!initialized) {
+                    initializeProfileUpload();
+                }
+            }, 300);
+        })();
     </script>
 @endsection
 

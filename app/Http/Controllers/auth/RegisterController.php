@@ -32,7 +32,13 @@ class RegisterController extends Controller
             'email' => 'nullable|email:rfc,dns|max:255|unique:users',
             'contact' => 'nullable|string|max:20',
             'role' => 'required|in:Student,Admin',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[A-Za-z]{2,})(?=.*[0-9]{2,}).{8,}$/',
+            ],
         ];
 
         // Student requires student-specific fields
@@ -54,8 +60,24 @@ class RegisterController extends Controller
 
         $validator = Validator::make($request->all(), $rules);
 
-        // Custom validation message for department and email
+        // Custom validation message for department, email, and password
         $validator->after(function ($validator) use ($request) {
+            // Password pattern validation
+            if ($request->filled('password')) {
+                $password = $request->input('password');
+                $letters = preg_match_all('/[A-Za-z]/', $password);
+                $numbers = preg_match_all('/[0-9]/', $password);
+                $length = strlen($password);
+
+                if ($length < 8) {
+                    $validator->errors()->add('password', 'Password must be at least 8 characters long.');
+                } elseif ($letters < 2) {
+                    $validator->errors()->add('password', 'Password must contain at least 2 letters.');
+                } elseif ($numbers < 2) {
+                    $validator->errors()->add('password', 'Password must contain at least 2 numbers.');
+                }
+            }
+
             if ($request->role === 'Student') {
                 // Get department value - should come from the dropdown
                 $department = $request->input('department');
@@ -64,7 +86,7 @@ class RegisterController extends Controller
                     $validator->errors()->add('department', 'The department field is required. Please select a department from the dropdown.');
                 }
             }
-            
+
             // Additional email validation - ensure email is valid if provided
             if ($request->filled('email')) {
                 $email = trim($request->input('email'));
@@ -187,7 +209,7 @@ class RegisterController extends Controller
         // This verifies the domain can receive emails
         $mxRecords = [];
         $hasMx = @getmxrr($domain, $mxRecords);
-        
+
         // If no MX records, check if domain resolves (has A record)
         // Some mail servers use A records instead of MX records
         if (!$hasMx) {

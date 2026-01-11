@@ -30,17 +30,23 @@
                         <div class="card-body" style="padding: 2rem;">
                             <div class="row">
                                 <div class="col-md-4 text-center mb-4">
-                                    @if($user->profile_picture)
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}" 
-                                            alt="{{ $user->name }}" 
-                                            style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd;">
-                                    @else
-                                        <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd;">
-                                            <span style="font-size: 4rem; color: white;">
-                                                <i class="fas fa-user"></i>
-                                            </span>
-                                        </div>
-                                    @endif
+                                    <a href="{{ route('profile.edit') }}" style="text-decoration: none; display: inline-block;">
+                                        @if($user->profile_picture)
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
+                                                alt="{{ $user->name }}"
+                                                style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
+                                                onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                        @else
+                                            <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
+                                                onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';"
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                                <span style="font-size: 4rem; color: white;">
+                                                    <i class="fas fa-user"></i>
+                                                </span>
+                                            </div>
+                                        @endif
+                                    </a>
                                 </div>
                                 <div class="col-md-8">
                                     <h3 class="mb-4">{{ $user->name }}</h3>
@@ -56,10 +62,6 @@
                                         <tr>
                                             <th>Contact:</th>
                                             <td>{{ $user->contact ?? 'N/A' }}</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Role:</th>
-                                            <td><span class="badge badge-primary">{{ $user->role }}</span></td>
                                         </tr>
                                         @if($user->department)
                                         <tr>

@@ -8,7 +8,7 @@
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h2 class="admin-heading">
-                        <i class="fas fa-list"></i> 
+                        <i class="fas fa-list"></i>
                         @if(isset($role) && in_array($role, ['Student', 'Teacher']))
                             My Book Requests
                         @else
@@ -20,10 +20,6 @@
                     @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
                         <a class="add-new" href="{{ route('book_issue.create') }}">
                             <i class="fas fa-plus"></i> Issue Book
-                        </a>
-                    @else
-                        <a class="add-new" href="{{ route('book_issue.create') }}">
-                            <i class="fas fa-plus"></i> Request Book
                         </a>
                     @endif
                     @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')

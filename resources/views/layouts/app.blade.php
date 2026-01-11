@@ -19,20 +19,37 @@
             <div class="row">
                 <div class="offset-md-4 col-md-4">
                     <div class="logo">
-                        <a href="#"><img src="{{ asset('images/library.png') }}"></a>
+                        <a href="{{ route('dashboard') }}"><img src="{{ asset('images/library.png') }}"></a>
                     </div>
                 </div>
                 <div class="offset-md-2 col-md-2">
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fas fa-user-circle"></i> {{ auth()->user()->name }}
+                    <div class="dropdown" style="position: relative;">
+                        <button class="btn btn-secondary dropdown-toggle d-flex align-items-center" type="button" id="dropdownMenuButton"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="gap: 10px; padding: 0.5rem 1rem; cursor: pointer; user-select: none; pointer-events: auto; position: relative; z-index: 1001;">
+                            @php
+                                $user = auth()->user();
+                            @endphp
+                            @if($user->profile_picture)
+                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
+                                    alt="{{ $user->name }}"
+                                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
+                            @else
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
+                                    <i class="fas fa-user" style="color: white; font-size: 1rem;"></i>
+                                </div>
+                            @endif
+                            <div class="d-flex flex-column align-items-start" style="line-height: 1.2; flex: 1; min-width: 0;">
+                                <span style="font-weight: 600; font-size: 0.95rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">{{ $user->name }}</span>
+                                <span class="badge badge-{{ $user->role === 'Admin' ? 'danger' : ($user->role === 'Student' ? 'success' : 'primary') }}" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-top: 2px; font-weight: 500;">
+                                    <i class="fas fa-{{ $user->role === 'Admin' ? 'user-shield' : ($user->role === 'Student' ? 'user-graduate' : 'user') }}"></i> {{ $user->role }}
+                                </span>
+                            </div>
                         </button>
-                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" href="{{ route('profile.show') }}">
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton" style="z-index: 1050; position: absolute; top: 100%; right: 0; margin-top: 0.125rem;">
+                            <a class="dropdown-item {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.show') }}">
                                 <i class="fas fa-user"></i> My Profile
                             </a>
-                            <a class="dropdown-item" href="{{ route('change_password') }}">
+                            <a class="dropdown-item {{ request()->routeIs('change_password') ? 'active' : '' }}" href="{{ route('change_password') }}">
                                 <i class="fas fa-key"></i> Change Password
                             </a>
                             <div class="dropdown-divider"></div>
@@ -54,35 +71,34 @@
             <div class="row">
                 <div class="col-md-12">
                     <ul class="menu">
-                        <li><a href="{{ route('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+                        <li><a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="fas fa-home"></i> Dashboard</a></li>
                         @if(auth()->user()->role == 'Admin')
-                            <li><a href="{{ route('authors') }}"><i class="fas fa-user-edit"></i> Authors</a></li>
-                            <li><a href="{{ route('publishers') }}"><i class="fas fa-building"></i> Publishers</a></li>
-                            <li><a href="{{ route('categories') }}"><i class="fas fa-tags"></i> Categories</a></li>
-                            <li><a href="{{ route('students') }}"><i class="fas fa-users"></i> Members</a></li>
+                            <li><a href="{{ route('authors') }}" class="{{ request()->routeIs('authors') ? 'active' : '' }}"><i class="fas fa-user-edit"></i> Authors</a></li>
+                            <li><a href="{{ route('publishers') }}" class="{{ request()->routeIs('publishers') ? 'active' : '' }}"><i class="fas fa-building"></i> Publishers</a></li>
+                            <li><a href="{{ route('categories') }}" class="{{ request()->routeIs('categories') ? 'active' : '' }}"><i class="fas fa-tags"></i> Categories</a></li>
+                            <li><a href="{{ route('students') }}" class="{{ request()->routeIs('students') ? 'active' : '' }}"><i class="fas fa-users"></i> Members</a></li>
                         @endif
-                        <li><a href="{{ route('books') }}"><i class="fas fa-book"></i> Books</a></li>
+                        <li><a href="{{ route('books') }}" class="{{ request()->routeIs('books') || request()->routeIs('book.*') ? 'active' : '' }}"><i class="fas fa-book"></i> Books</a></li>
                         @if(auth()->user()->role == 'Student')
-                            <li><a href="{{ route('book_issue.create') }}"><i class="fas fa-hand-holding"></i> Request Book</a></li>
-                            <li><a href="{{ route('book_issued') }}"><i class="fas fa-list"></i> My Requests</a></li>
+                            <li><a href="{{ route('book_issue.create') }}" class="{{ request()->routeIs('book_issue.create') ? 'active' : '' }}"><i class="fas fa-hand-holding"></i> Request Book</a></li>
+                            <li><a href="{{ route('book_issued') }}" class="{{ request()->routeIs('book_issued') ? 'active' : '' }}"><i class="fas fa-list"></i> My Requests</a></li>
                         @endif
                         @if(auth()->user()->role == 'Admin')
-                            <li><a href="{{ route('book_issued') }}"><i class="fas fa-hand-holding"></i> Book Issue</a></li>
-                            <li><a href="{{ route('book_issue.pending') }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
-                            <li><a href="{{ route('reservations.index') }}"><i class="fas fa-calendar-check"></i> Reservations</a></li>
-                            <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> Fines</a></li>
+                            <li><a href="{{ route('book_issued') }}" class="{{ request()->routeIs('book_issued') ? 'active' : '' }}"><i class="fas fa-hand-holding"></i> Book Issue</a></li>
+                            <li><a href="{{ route('book_issue.pending') }}" class="{{ request()->routeIs('book_issue.pending') ? 'active' : '' }}"><i class="fas fa-clock"></i> Pending Requests</a></li>
+                            <li><a href="{{ route('reservations.index') }}" class="{{ request()->routeIs('reservations.*') ? 'active' : '' }}"><i class="fas fa-calendar-check"></i> Reservations</a></li>
+                            <li><a href="{{ route('fines.index') }}" class="{{ request()->routeIs('fines.*') ? 'active' : '' }}"><i class="fas fa-dollar-sign"></i> Fines</a></li>
                         @endif
                         @if(auth()->user()->role == 'Student')
-                            <li><a href="{{ route('fines.index') }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
-                            <li><a href="{{ route('chatbot.index') }}"><i class="fas fa-robot"></i> Chatbot</a></li>
-                            <li><a href="{{ route('reading.index') }}"><i class="fas fa-book-reader"></i> Read Books Online</a></li>
+                            <li><a href="{{ route('fines.index') }}" class="{{ request()->routeIs('fines.*') ? 'active' : '' }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
+                            <li><a href="{{ route('reading.index') }}" class="{{ request()->routeIs('reading.*') ? 'active' : '' }}"><i class="fas fa-book-reader"></i> Read Books Online</a></li>
                         @endif
-                        <li><a href="{{ route('reports') }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                        <li><a href="{{ route('reports') }}" class="{{ request()->routeIs('reports') || request()->routeIs('reports.*') ? 'active' : '' }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
                         @if(auth()->user()->role == 'Admin')
-                            <li><a href="{{ route('registrations.pending') }}"><i class="fas fa-user-clock"></i> Pending Registrations</a></li>
+                            <li><a href="{{ route('registrations.pending') }}" class="{{ request()->routeIs('registrations.*') ? 'active' : '' }}"><i class="fas fa-user-clock"></i> Pending Registrations</a></li>
                         @endif
                         @if(auth()->user()->role == 'Admin')
-                            <li><a href="{{ route('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
+                            <li><a href="{{ route('settings') }}" class="{{ request()->routeIs('settings') ? 'active' : '' }}"><i class="fas fa-cog"></i> Settings</a></li>
                         @endif
                     </ul>
                 </div>
@@ -92,12 +108,20 @@
 
     @yield('content')
 
+    <!-- Floating Chatbot Button -->
+    @if(auth()->user()->role == 'Student')
+    <a href="{{ route('chatbot.index') }}" class="chatbot-float-btn" title="Chat with Library Assistant">
+        <i class="fas fa-robot"></i>
+        <span class="chatbot-tooltip">Chatbot</span>
+    </a>
+    @endif
+
     <!-- FOOTER -->
     <div id="footer">
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <span>© Copyright {{ now()->format("Y") }} <a href="https://www.yahoobaba.net">YahooBaba 😎</a></span>
+                    <span>© Copyright {{ now()->format("Y") }} Library Management System. All Rights Reserved.</span>
                 </div>
             </div>
         </div>
@@ -107,6 +131,98 @@
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        // Ensure profile dropdown works reliably - simplified and robust approach
+        (function() {
+            'use strict';
+
+            let initialized = false;
+            let button = null;
+            let menu = null;
+
+            function initDropdown() {
+                if (initialized) return;
+
+                button = document.getElementById('dropdownMenuButton');
+                if (!button) {
+                    setTimeout(initDropdown, 100);
+                    return;
+                }
+
+                menu = button.nextElementSibling;
+                if (!menu || !menu.classList.contains('dropdown-menu')) {
+                    setTimeout(initDropdown, 100);
+                    return;
+                }
+
+                initialized = true;
+
+                // Remove data-toggle to prevent Bootstrap auto-init conflicts
+                button.removeAttribute('data-toggle');
+
+                // Direct click handler - simple and reliable
+                button.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const isOpen = menu.classList.contains('show');
+
+                    // Close all other dropdowns
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(m) {
+                        if (m !== menu) m.classList.remove('show');
+                    });
+                    document.querySelectorAll('[aria-expanded="true"]').forEach(function(b) {
+                        if (b !== button) b.setAttribute('aria-expanded', 'false');
+                    });
+
+                    // Toggle this dropdown
+                    if (isOpen) {
+                        menu.classList.remove('show');
+                        button.setAttribute('aria-expanded', 'false');
+                    } else {
+                        menu.classList.add('show');
+                        button.setAttribute('aria-expanded', 'true');
+                    }
+                };
+
+                // Close on outside click
+                document.addEventListener('click', function(e) {
+                    if (menu && menu.classList.contains('show') &&
+                        !button.contains(e.target) &&
+                        !menu.contains(e.target)) {
+                        menu.classList.remove('show');
+                        button.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Close on Escape
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && menu && menu.classList.contains('show')) {
+                        menu.classList.remove('show');
+                        button.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            // Initialize immediately if DOM ready, otherwise wait
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initDropdown);
+            } else {
+                initDropdown();
+            }
+
+            // Backup initialization after scripts load
+            if (typeof jQuery !== 'undefined') {
+                jQuery(function() {
+                    setTimeout(initDropdown, 50);
+                });
+            }
+
+            window.addEventListener('load', function() {
+                setTimeout(initDropdown, 100);
+            });
+        })();
+    </script>
 </body>
 
 </html>

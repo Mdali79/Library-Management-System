@@ -104,7 +104,7 @@
                             </div>
                             <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700;">{{ $pending_fines_count }}</h1>
                             <h5 class="card-title" style="font-size: 0.85rem; opacity: 0.95;">Pending Fines</h5>
-                            <p class="mb-0" style="font-size: 1.1rem; font-weight: 600;">${{ number_format($pending_fines_amount, 2) }}</p>
+                            <p class="mb-0" style="font-size: 1.1rem; font-weight: 600;">{{ number_format($pending_fines_amount, 2) }} tk</p>
                         </div>
                     </div>
                 </div>
@@ -245,7 +245,7 @@
                                     @foreach($my_pending_fines as $fine)
                                     <tr>
                                         <td>{{ $fine->bookIssue->book->name }}</td>
-                                        <td>${{ number_format($fine->amount, 2) }}</td>
+                                        <td>{{ number_format($fine->amount, 2) }} tk</td>
                                         <td>{{ $fine->days_overdue }} days</td>
                                         <td><a href="{{ route('fines.index') }}" class="btn btn-sm btn-primary">Pay Now</a></td>
                                     </tr>
@@ -301,174 +301,337 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" onload="window.chartJsLoaded = true;"></script>
     <script>
-        // Monthly Activity Chart
-        const ctx = document.getElementById('monthlyChart').getContext('2d');
-        const monthlyData = @json($monthly_activity);
+        (function() {
+            let chartInitialized = false;
+            const monthlyData = @json($monthly_activity);
 
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: monthlyData.map(item => item.month),
-                datasets: [{
-                    label: 'Books Issued',
-                    data: monthlyData.map(item => item.issued),
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1
-                }, {
-                    label: 'Books Returned',
-                    data: monthlyData.map(item => item.returned),
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+            function initializeChart() {
+                // Prevent multiple initializations
+                if (chartInitialized) {
+                    return;
+                }
+
+                // Check if Chart.js is loaded
+                if (typeof Chart === 'undefined') {
+                    return;
+                }
+
+                // Check if DOM is ready
+                const canvas = document.getElementById('monthlyChart');
+                if (!canvas) {
+                    return;
+                }
+
+                // Check if chart already exists
+                if (canvas.chart) {
+                    chartInitialized = true;
+                    return;
+                }
+
+                if (!monthlyData || monthlyData.length === 0) {
+                    console.warn('No monthly activity data available');
+                    return;
+                }
+
+                try {
+                    const ctx = canvas.getContext('2d');
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: monthlyData.map(item => item.month),
+                            datasets: [{
+                                label: 'Books Issued',
+                                data: monthlyData.map(item => item.issued),
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                tension: 0.1
+                            }, {
+                                label: 'Books Returned',
+                                data: monthlyData.map(item => item.returned),
+                                borderColor: 'rgb(255, 99, 132)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            animation: {
+                                duration: 0
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+
+                    canvas.chart = chart;
+                    chartInitialized = true;
+                } catch (error) {
+                    console.error('Error initializing chart:', error);
                 }
             }
-        });
+
+            // Function to try initialization
+            function tryInitialize() {
+                if (typeof Chart !== 'undefined' && document.getElementById('monthlyChart')) {
+                    initializeChart();
+                }
+            }
+
+            // Wait for DOM and Chart.js
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Check if Chart.js is already loaded
+                    if (window.chartJsLoaded || typeof Chart !== 'undefined') {
+                        setTimeout(tryInitialize, 100);
+                    } else {
+                        // Poll for Chart.js
+                        let attempts = 0;
+                        const checkChart = setInterval(function() {
+                            attempts++;
+                            if (typeof Chart !== 'undefined') {
+                                clearInterval(checkChart);
+                                setTimeout(tryInitialize, 100);
+                            } else if (attempts > 50) {
+                                clearInterval(checkChart);
+                                console.error('Chart.js failed to load');
+                            }
+                        }, 50);
+                    }
+                });
+            } else {
+                // DOM is already ready
+                if (window.chartJsLoaded || typeof Chart !== 'undefined') {
+                    setTimeout(tryInitialize, 100);
+                } else {
+                    // Poll for Chart.js
+                    let attempts = 0;
+                    const checkChart = setInterval(function() {
+                        attempts++;
+                        if (typeof Chart !== 'undefined') {
+                            clearInterval(checkChart);
+                            setTimeout(tryInitialize, 100);
+                        } else if (attempts > 50) {
+                            clearInterval(checkChart);
+                            console.error('Chart.js failed to load');
+                        }
+                    }, 50);
+                }
+            }
+
+            // Fallback: try on window load
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    if (!chartInitialized) {
+                        tryInitialize();
+                    }
+                }, 300);
+            });
+        })();
 
         // Dashboard Search Suggestions - AJAX based
-        const dashboardSearchInput = document.getElementById('dashboard-search-input');
-        const dashboardSuggestionsDiv = document.getElementById('dashboard-suggestions');
-        let dashboardSuggestionTimeout = null;
-        const dashboardSuggestionsUrl = '{{ route("book.suggestions") }}';
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardSearchInput = document.getElementById('dashboard-search-input');
+            const dashboardSuggestionsDiv = document.getElementById('dashboard-suggestions');
 
-        // Show suggestions on focus
-        dashboardSearchInput.addEventListener('focus', function() {
-            fetchDashboardSuggestions('');
-        });
-
-        // Fetch suggestions as user types
-        dashboardSearchInput.addEventListener('input', function() {
-            const searchTerm = this.value.trim();
-            
-            // Clear previous timeout
-            if (dashboardSuggestionTimeout) {
-                clearTimeout(dashboardSuggestionTimeout);
+            if (!dashboardSearchInput || !dashboardSuggestionsDiv) {
+                console.error('Dashboard search elements not found');
+                return;
             }
-            
-            // Debounce: wait 300ms after user stops typing
-            dashboardSuggestionTimeout = setTimeout(function() {
-                fetchDashboardSuggestions(searchTerm);
-            }, 300);
-        });
 
-        // Fetch suggestions from server
-        function fetchDashboardSuggestions(searchTerm) {
-            const url = dashboardSuggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(suggestions => {
-                    if (suggestions && suggestions.length > 0) {
-                        displayDashboardSuggestions(suggestions);
-                    } else {
-                        dashboardSuggestionsDiv.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching suggestions:', error);
-                    dashboardSuggestionsDiv.style.display = 'none';
-                });
-        }
+            let dashboardSuggestionTimeout = null;
+            const dashboardSuggestionsUrl = '{{ route("book.suggestions") }}';
 
-        function displayDashboardSuggestions(suggestions) {
-            dashboardSuggestionsDiv.innerHTML = '';
-            
-            // Group suggestions by type
-            const grouped = {};
-            suggestions.forEach(item => {
-                const type = item.type || 'other';
-                if (!grouped[type]) {
-                    grouped[type] = [];
+            // Show suggestions on focus
+            dashboardSearchInput.addEventListener('focus', function() {
+                const searchTerm = this.value.trim();
+                if (searchTerm.length > 0) {
+                    fetchDashboardSuggestions(searchTerm);
+                } else {
+                    fetchDashboardSuggestions('');
                 }
-                grouped[type].push(item);
             });
-            
-            // Display grouped suggestions
-            Object.keys(grouped).forEach(type => {
-                const items = grouped[type];
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    
-                    const icon = document.createElement('span');
-                    icon.className = 'suggestion-icon';
-                    icon.textContent = item.icon || '🔍';
-                    
-                    const text = document.createElement('span');
-                    text.className = 'suggestion-text';
-                    text.textContent = item.text;
-                    
-                    const typeLabel = document.createElement('span');
-                    typeLabel.className = 'suggestion-type';
-                    typeLabel.textContent = item.type || '';
-                    
-                    div.appendChild(icon);
-                    div.appendChild(text);
-                    div.appendChild(typeLabel);
-                    
-                    div.addEventListener('click', function() {
-                        dashboardSearchInput.value = item.text;
+
+            // Fetch suggestions as user types - immediate response
+            dashboardSearchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+
+                // Clear previous timeout
+                if (dashboardSuggestionTimeout) {
+                    clearTimeout(dashboardSuggestionTimeout);
+                }
+
+                // If user just started typing (first character), show suggestions immediately
+                if (searchTerm.length === 1) {
+                    fetchDashboardSuggestions(searchTerm);
+                } else if (searchTerm.length > 1) {
+                    // For subsequent characters, use shorter debounce (150ms) for faster response
+                    dashboardSuggestionTimeout = setTimeout(function() {
+                        fetchDashboardSuggestions(searchTerm);
+                    }, 150);
+                } else {
+                    // If input is cleared, show popular suggestions
+                    fetchDashboardSuggestions('');
+                }
+            });
+
+            // Also trigger on keydown for immediate feedback
+            dashboardSearchInput.addEventListener('keydown', function(e) {
+                // Don't interfere with arrow keys, enter, escape
+                if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+                    return;
+                }
+
+                const searchTerm = this.value.trim();
+                // If user is typing a character, show suggestions immediately
+                if (searchTerm.length >= 1 && e.key.length === 1) {
+                    clearTimeout(dashboardSuggestionTimeout);
+                    dashboardSuggestionTimeout = setTimeout(function() {
+                        fetchDashboardSuggestions(searchTerm + e.key);
+                    }, 100);
+                }
+            });
+
+            // Fetch suggestions from server
+            function fetchDashboardSuggestions(searchTerm) {
+                const url = dashboardSuggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(suggestions => {
+                        if (suggestions && suggestions.length > 0) {
+                            displayDashboardSuggestions(suggestions);
+                        } else {
+                            dashboardSuggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
                         dashboardSuggestionsDiv.style.display = 'none';
-                        // Auto-submit form when suggestion is clicked
-                        document.getElementById('dashboard-search-form').submit();
                     });
-                    
-                    dashboardSuggestionsDiv.appendChild(div);
-                });
-            });
-            
-            dashboardSuggestionsDiv.style.display = 'block';
-        }
-
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!dashboardSearchInput.contains(e.target) && !dashboardSuggestionsDiv.contains(e.target)) {
-                dashboardSuggestionsDiv.style.display = 'none';
             }
-        });
 
-        // Handle keyboard navigation
-        dashboardSearchInput.addEventListener('keydown', function(e) {
-            const visibleSuggestions = dashboardSuggestionsDiv.querySelectorAll('.suggestion-item');
-            const highlighted = dashboardSuggestionsDiv.querySelector('.suggestion-item.highlighted');
-            
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (highlighted) {
-                    highlighted.classList.remove('highlighted');
-                    const next = highlighted.nextElementSibling;
-                    if (next) {
-                        next.classList.add('highlighted');
+            function displayDashboardSuggestions(suggestions) {
+                dashboardSuggestionsDiv.innerHTML = '';
+
+                if (!suggestions || suggestions.length === 0) {
+                    dashboardSuggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                // Group suggestions by type
+                const grouped = {};
+                suggestions.forEach(item => {
+                    const type = item.type || 'other';
+                    if (!grouped[type]) {
+                        grouped[type] = [];
+                    }
+                    grouped[type].push(item);
+                });
+
+                // Type labels mapping
+                const typeLabels = {
+                    'book': '📚 Books',
+                    'author': '✍️ Authors',
+                    'category': '📂 Categories',
+                    'publisher': '🏢 Publishers',
+                    'isbn': '🔢 ISBN'
+                };
+
+                // Display grouped suggestions with headers
+                Object.keys(grouped).forEach(type => {
+                    const items = grouped[type];
+
+                    // Add header for each type
+                    const header = document.createElement('div');
+                    header.className = 'suggestions-header';
+                    header.textContent = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1);
+                    dashboardSuggestionsDiv.appendChild(header);
+
+                    items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+
+                        const icon = document.createElement('span');
+                        icon.className = 'suggestion-icon';
+                        icon.textContent = item.icon || '🔍';
+
+                        const text = document.createElement('span');
+                        text.className = 'suggestion-text';
+                        text.textContent = item.text;
+
+                        div.appendChild(icon);
+                        div.appendChild(text);
+
+                        div.addEventListener('click', function() {
+                            dashboardSearchInput.value = item.text;
+                            dashboardSearchInput.focus();
+                            dashboardSuggestionsDiv.style.display = 'none';
+                            // Don't auto-submit - let user review and click search button
+                        });
+
+                        dashboardSuggestionsDiv.appendChild(div);
+                    });
+                });
+
+                dashboardSuggestionsDiv.style.display = 'block';
+            }
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!dashboardSearchInput.contains(e.target) && !dashboardSuggestionsDiv.contains(e.target)) {
+                    dashboardSuggestionsDiv.style.display = 'none';
+                }
+            });
+
+            // Handle keyboard navigation
+            dashboardSearchInput.addEventListener('keydown', function(e) {
+                const visibleSuggestions = dashboardSuggestionsDiv.querySelectorAll('.suggestion-item');
+                const highlighted = dashboardSuggestionsDiv.querySelector('.suggestion-item.highlighted');
+
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (highlighted) {
+                        highlighted.classList.remove('highlighted');
+                        const next = highlighted.nextElementSibling;
+                        if (next) {
+                            next.classList.add('highlighted');
+                        } else if (visibleSuggestions.length > 0) {
+                            visibleSuggestions[0].classList.add('highlighted');
+                        }
                     } else if (visibleSuggestions.length > 0) {
                         visibleSuggestions[0].classList.add('highlighted');
                     }
-                } else if (visibleSuggestions.length > 0) {
-                    visibleSuggestions[0].classList.add('highlighted');
-                }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (highlighted) {
+                        highlighted.classList.remove('highlighted');
+                        const prev = highlighted.previousElementSibling;
+                        if (prev) {
+                            prev.classList.add('highlighted');
+                        }
+                    }
+            } else if (e.key === 'Enter') {
                 if (highlighted) {
-                    highlighted.classList.remove('highlighted');
-                    const prev = highlighted.previousElementSibling;
-                    if (prev) {
-                        prev.classList.add('highlighted');
+                    e.preventDefault();
+                    highlighted.click();
+                } else {
+                    // Submit form on Enter if no suggestion is highlighted
+                    const form = document.getElementById('dashboard-search-form');
+                    if (form) {
+                        form.submit();
                     }
                 }
-            } else if (e.key === 'Enter' && highlighted) {
-                e.preventDefault();
-                highlighted.click();
+            } else if (e.key === 'Escape') {
+                dashboardSuggestionsDiv.style.display = 'none';
             }
+        });
         });
     </script>
 
@@ -476,41 +639,86 @@
         .suggestions-dropdown {
             position: absolute;
             background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 200px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 400px;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 1050;
             width: 100%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 400px;
+            max-width: 700px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
+            margin-top: 4px;
+            top: 100%;
+            left: 0;
         }
         .suggestion-item {
-            padding: 10px 15px;
+            padding: 12px 18px;
             cursor: pointer;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            min-height: 48px;
         }
         .suggestion-item:hover,
         .suggestion-item.highlighted {
-            background-color: #f8f9fa;
+            background: linear-gradient(90deg, #e7f3ff 0%, #f0f8ff 100%);
+            border-left: 4px solid #2563eb;
+            padding-left: 14px;
+            transform: translateX(2px);
         }
         .suggestion-item:last-child {
             border-bottom: none;
         }
         .suggestion-icon {
-            margin-right: 10px;
-            font-size: 1.1em;
+            margin-right: 12px;
+            font-size: 1.2em;
+            width: 24px;
+            text-align: center;
         }
         .suggestion-text {
             flex: 1;
+            font-size: 0.95rem;
+            color: #333;
+            font-weight: 500;
         }
         .suggestion-type {
-            font-size: 0.85em;
+            font-size: 0.75em;
             color: #6c757d;
             margin-left: auto;
             text-transform: capitalize;
+            padding: 4px 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .suggestions-header {
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: 700;
+            font-size: 0.85em;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 @endsection

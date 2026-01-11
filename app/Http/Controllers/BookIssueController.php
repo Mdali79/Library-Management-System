@@ -425,7 +425,7 @@ class BookIssueController extends Controller
             ]);
         }
 
-        return redirect()->route('book_issued')->with('success', 'Book returned successfully. Receipt: ' . $returnReceiptNumber . ($fine > 0 ? '. Fine: $' . number_format($fine, 2) : ''));
+        return redirect()->route('book_issued')->with('success', 'Book returned successfully. Receipt: ' . $returnReceiptNumber . ($fine > 0 ? '. Fine: ' . number_format($fine, 2) . ' tk' : ''));
     }
 
     /**

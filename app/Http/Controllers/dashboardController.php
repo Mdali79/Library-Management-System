@@ -27,35 +27,35 @@ class dashboardController extends Controller
             $studentRecord = student::where('user_id', $user->id)->first();
             $totalBooks = book::count(); // Students can see total books
             $totalMembers = 0; // Students don't see member count
-            
+
             // Calculate issued books: books that are currently issued (not returned)
             // issue_status = 'N' means not returned, request_status = 'issued' means approved and issued
             $issuedBooksCount = 0;
             if ($studentRecord) {
                 $issuedBooksCount = book_issue::where('student_id', $studentRecord->id)
-                    ->where(function($query) {
+                    ->where(function ($query) {
                         $query->where('issue_status', 'N')
-                              ->orWhereNull('issue_status');
+                            ->orWhereNull('issue_status');
                     })
-                    ->where(function($query) {
+                    ->where(function ($query) {
                         $query->where('request_status', 'issued')
-                              ->orWhere('request_status', 'approved');
+                            ->orWhere('request_status', 'approved');
                     })
                     ->count();
             }
-            
+
             // Calculate returned books: books that have been returned
             // issue_status = 'Y' means returned, or return_day is not null
             $returnedBooksCount = 0;
             if ($studentRecord) {
                 $returnedBooksCount = book_issue::where('student_id', $studentRecord->id)
-                    ->where(function($query) {
+                    ->where(function ($query) {
                         $query->where('issue_status', 'Y')
-                              ->orWhereNotNull('return_day');
+                            ->orWhereNotNull('return_day');
                     })
                     ->count();
             }
-            
+
             $pendingFinesCount = $studentRecord ? Fine::where('student_id', $studentRecord->id)
                 ->where('status', 'pending')
                 ->count() : 0;
@@ -65,18 +65,18 @@ class dashboardController extends Controller
         } else {
             $totalBooks = book::count();
             $totalMembers = student::count();
-            $issuedBooksCount = book_issue::where(function($query) {
+            $issuedBooksCount = book_issue::where(function ($query) {
                 $query->where('issue_status', 'N')
-                      ->orWhereNull('issue_status');
+                    ->orWhereNull('issue_status');
             })
-            ->where(function($query) {
-                $query->where('request_status', 'issued')
-                      ->orWhere('request_status', 'approved');
-            })
-            ->count();
-            $returnedBooksCount = book_issue::where(function($query) {
+                ->where(function ($query) {
+                    $query->where('request_status', 'issued')
+                        ->orWhere('request_status', 'approved');
+                })
+                ->count();
+            $returnedBooksCount = book_issue::where(function ($query) {
                 $query->where('issue_status', 'Y')
-                      ->orWhereNotNull('return_day');
+                    ->orWhereNotNull('return_day');
             })->count();
             $pendingFinesCount = Fine::where('status', 'pending')->count();
             $pendingFinesAmount = Fine::where('status', 'pending')->sum('amount');
@@ -88,7 +88,7 @@ class dashboardController extends Controller
             $month = Carbon::now()->subMonths($i);
             $monthStart = $month->copy()->startOfMonth();
             $monthEnd = $month->copy()->endOfMonth();
-            
+
             $monthlyActivity[] = [
                 'month' => $month->format('M Y'),
                 'issued' => book_issue::whereBetween('issue_date', [$monthStart, $monthEnd])->count(),
@@ -114,29 +114,29 @@ class dashboardController extends Controller
         // Student specific data
         if ($role === 'Student') {
             $studentRecord = student::where('user_id', $user->id)->first();
-            
+
             if ($studentRecord) {
                 $data['my_issued_books'] = book_issue::where('student_id', $studentRecord->id)
                     ->where('issue_status', 'N')
                     ->where('request_status', 'issued')
                     ->with('book')
                     ->get();
-                
+
                 $data['my_pending_requests'] = book_issue::where('student_id', $studentRecord->id)
                     ->where('request_status', 'pending')
                     ->with('book')
                     ->get();
-                
+
                 $data['my_pending_fines'] = Fine::where('student_id', $studentRecord->id)
                     ->where('status', 'pending')
                     ->with('bookIssue.book')
                     ->get();
-                
+
                 $data['my_reservations'] = BookReservation::where('student_id', $studentRecord->id)
                     ->whereIn('status', ['pending', 'available'])
                     ->with('book')
                     ->get();
-                
+
                 $data['my_borrowing_limit'] = $studentRecord->borrowing_limit ?? 5;
                 $data['my_current_borrowed'] = count($data['my_issued_books']);
             }
@@ -149,7 +149,7 @@ class dashboardController extends Controller
                 ->where('return_date', '<', Carbon::now())
                 ->with(['book', 'student'])
                 ->get();
-            
+
             $data['pending_reservations'] = BookReservation::where('status', 'pending')
                 ->with(['book', 'student'])
                 ->count();
@@ -160,7 +160,7 @@ class dashboardController extends Controller
             $data['pending_book_requests'] = book_issue::where('request_status', 'pending')
                 ->with(['book', 'student.user'])
                 ->count();
-            
+
             // Pending user registrations
             $data['pending_registrations'] = \App\Models\User::where('registration_status', 'pending')
                 ->count();
@@ -185,8 +185,38 @@ class dashboardController extends Controller
     {
         $request->validate([
             'c_password' => 'required',
-            'password' => 'required|confirmed',
+            'password' => [
+                'required',
+                'confirmed',
+                'min:8',
+                'regex:/^(?=.*[A-Za-z]{2,})(?=.*[0-9]{2,}).{8,}$/',
+            ],
+        ], [
+            'password.regex' => 'Password must contain at least 2 letters, 2 numbers, and be 8+ characters long.',
         ]);
+
+        // Additional validation
+        $validator = \Validator::make($request->all(), []);
+        $validator->after(function ($validator) use ($request) {
+            $password = $request->input('password');
+            $letters = preg_match_all('/[A-Za-z]/', $password);
+            $numbers = preg_match_all('/[0-9]/', $password);
+            $length = strlen($password);
+
+            if ($length < 8) {
+                $validator->errors()->add('password', 'Password must be at least 8 characters long.');
+            } elseif ($letters < 2) {
+                $validator->errors()->add('password', 'Password must contain at least 2 letters.');
+            } elseif ($numbers < 2) {
+                $validator->errors()->add('password', 'Password must contain at least 2 numbers.');
+            }
+        });
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         $user = Auth::user();
 
