@@ -28,19 +28,26 @@
                             </ul>
                         </div>
                     @endif
-                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                        <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none;">
-                            <h5 style="margin: 0; font-weight: 600;">
-                                <i class="fas fa-info-circle"></i> Student Information
-                            </h5>
+                    @if(isset($error))
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> {{ $error }}
                         </div>
-                        <div class="card-body">
-                            <p><strong>Name:</strong> {{ $student->name }}</p>
-                            <p><strong>Department:</strong> {{ $student->department ?? 'N/A' }}</p>
-                            <p><strong>Roll No:</strong> {{ $student->roll ?? 'N/A' }}</p>
-                            <p><strong>Registration No:</strong> {{ $student->reg_no ?? 'N/A' }}</p>
+                    @elseif($student)
+                        <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none;">
+                                <h5 style="margin: 0; font-weight: 600;">
+                                    <i class="fas fa-info-circle"></i> Student Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Name:</strong> {{ $student->name }}</p>
+                                <p><strong>Department:</strong> {{ $student->department ?? 'N/A' }}</p>
+                                <p><strong>Roll No:</strong> {{ $student->roll ?? 'N/A' }}</p>
+                                <p><strong>Registration No:</strong> {{ $student->reg_no ?? 'N/A' }}</p>
+                            </div>
                         </div>
-                    </div>
+                    @endif
+                    @if(!isset($error) && $student)
                     <form class="yourform" action="{{ route('book_issue.store') }}" method="post" autocomplete="off" style="margin-top: 2rem;">
                         @csrf
                         <div class="form-group">
@@ -83,6 +90,7 @@
                             <i class="fas fa-paper-plane"></i> Submit Request
                         </button>
                     </form>
+                    @endif
                 </div>
             </div>
         </div>

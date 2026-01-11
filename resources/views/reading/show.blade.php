@@ -64,8 +64,8 @@
                         </div>
                         <div class="card-footer bg-light">
                             <div class="alert alert-warning mb-0" id="preview-limit-alert" style="display: none;">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>Preview Limit Reached:</strong> You've reached the preview limit ({{ $previewPages }} pages). 
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Preview Limit Reached:</strong> You've reached the preview limit ({{ $previewPages }} pages).
                                 To continue reading, please <a href="{{ route('book_issue.create') }}" class="alert-link">request the full book</a> from the library.
                             </div>
                         </div>
@@ -81,8 +81,8 @@
                         <div class="card-body">
                             @if($book->cover_image)
                                 <div class="text-center mb-3">
-                                    <img src="{{ $book->cover_image_url }}" 
-                                        alt="{{ $book->name }}" 
+                                    <img src="{{ $book->cover_image_url }}"
+                                        alt="{{ $book->name }}"
                                         style="max-width: 100%; max-height: 300px; border-radius: 4px;">
                                 </div>
                             @endif
@@ -152,15 +152,22 @@
     </div>
 
     <!-- PDF.js Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onload="window.pdfJsLoaded = true;"></script>
 
     <script>
         (function() {
             'use strict';
-            
-            // Set PDF.js worker
-            if (typeof pdfjsLib !== 'undefined') {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+            // Track PDF.js loading state
+            window.pdfJsLoaded = false;
+
+            // Set PDF.js worker when library is available
+            function initializePdfJs() {
+                if (typeof pdfjsLib !== 'undefined') {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                    return true;
+                }
+                return false;
             }
 
             let pdfDoc = null;
@@ -174,7 +181,7 @@
             // Get canvas and context - wait for DOM to be ready
             let canvas = null;
             let ctx = null;
-            
+
             // Initialize canvas when DOM is ready
             function initializeCanvas() {
                 if (!canvas) {
@@ -194,7 +201,7 @@
                 console.error('Canvas, context, or PDF document not initialized');
                 return;
             }
-            
+
             pageRendering = true;
 
             pdfDoc.getPage(num).then(function(page) {
@@ -305,17 +312,18 @@
                 console.error('Failed to initialize canvas');
                 const loader = document.getElementById('pdf-loader');
                 if (loader) {
-                    loader.innerHTML = 
+                    loader.innerHTML =
                         '<div class="text-white"><i class="fas fa-exclamation-triangle fa-3x"></i><p class="mt-3">Failed to initialize PDF viewer.</p></div>';
                 }
                 return;
             }
 
-            if (typeof pdfjsLib === 'undefined') {
+            // Initialize PDF.js worker
+            if (!initializePdfJs()) {
                 console.error('PDF.js library not loaded');
                 const loader = document.getElementById('pdf-loader');
                 if (loader) {
-                    loader.innerHTML = 
+                    loader.innerHTML =
                         '<div class="text-white"><i class="fas fa-exclamation-triangle fa-3x"></i><p class="mt-3">PDF.js library failed to load. Please refresh the page.</p></div>';
                 }
                 return;
@@ -330,18 +338,18 @@
                 pdfDoc = pdf;
                 const loader = document.getElementById('pdf-loader');
                 const canvasEl = document.getElementById('pdf-canvas');
-                
+
                 if (loader) loader.style.display = 'none';
                 if (canvasEl) canvasEl.style.display = 'block';
-                
+
                 const pageCountEl = document.getElementById('page-count');
                 if (pageCountEl) pageCountEl.textContent = pdf.numPages;
-                
+
                 // Limit initial page to preview pages
                 if (pdf.numPages > maxPreviewPages) {
                     pageNum = Math.min(pageNum, maxPreviewPages);
                 }
-                
+
                 renderPage(pageNum);
             }).catch(function(error) {
                 console.error('Error loading PDF:', error);
@@ -351,33 +359,79 @@
                     if (error.message) {
                         errorMsg += ' ' + error.message;
                     }
-                    loader.innerHTML = 
+                    loader.innerHTML =
                         '<div class="text-white"><i class="fas fa-exclamation-triangle fa-3x"></i><p class="mt-3">' + errorMsg + '</p><p class="mt-2"><small>Please check if the PDF file exists and try again.</small></p></div>';
                 }
             });
         }
 
+        // Wait for both DOM and PDF.js to be ready
+        function waitForPdfJsAndLoad() {
+            // Check if PDF.js is loaded
+            if (typeof pdfjsLib !== 'undefined' && (window.pdfJsLoaded || typeof pdfjsLib.getDocument !== 'undefined')) {
+                initializePdfJs();
+                loadPDF();
+                return true;
+            }
+            return false;
+        }
+
         // Event listeners and PDF loading - wait for DOM
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializePdfViewer() {
             // Set up event listeners
             const prevBtn = document.getElementById('prev-page');
             const nextBtn = document.getElementById('next-page');
             const zoomInBtn = document.getElementById('zoom-in');
             const zoomOutBtn = document.getElementById('zoom-out');
-            
+
             if (prevBtn) prevBtn.addEventListener('click', onPrevPage);
             if (nextBtn) nextBtn.addEventListener('click', onNextPage);
             if (zoomInBtn) zoomInBtn.addEventListener('click', zoomIn);
             if (zoomOutBtn) zoomOutBtn.addEventListener('click', zoomOut);
-            
-            // Load PDF - wait a bit for PDF.js to load
-            if (typeof pdfjsLib === 'undefined') {
-                setTimeout(function() {
-                    loadPDF();
-                }, 500);
-            } else {
-                loadPDF();
+
+            // Try to load PDF immediately if PDF.js is ready
+            if (waitForPdfJsAndLoad()) {
+                return;
             }
+
+            // Poll for PDF.js availability
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+
+            const checkInterval = setInterval(function() {
+                attempts++;
+
+                if (waitForPdfJsAndLoad()) {
+                    clearInterval(checkInterval);
+                    return;
+                }
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(checkInterval);
+                    const loader = document.getElementById('pdf-loader');
+                    if (loader) {
+                        loader.innerHTML =
+                            '<div class="text-white"><i class="fas fa-exclamation-triangle fa-3x"></i><p class="mt-3">PDF.js library failed to load. Please refresh the page.</p></div>';
+                    }
+                }
+            }, 100);
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePdfViewer);
+        } else {
+            // DOM already ready, initialize immediately
+            initializePdfViewer();
+        }
+
+        // Also try after window load as fallback
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (!pdfDoc && typeof pdfjsLib !== 'undefined') {
+                    initializePdfViewer();
+                }
+            }, 200);
         });
 
         // Keyboard navigation
@@ -389,7 +443,7 @@
                 onNextPage();
             }
         });
-        
+
         })(); // End IIFE
     </script>
 

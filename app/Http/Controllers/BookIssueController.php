@@ -88,7 +88,12 @@ class BookIssueController extends Controller
         $student = student::where('user_id', $user->id)->first();
 
         if (!$student) {
-            return redirect()->route('dashboard')->withErrors(['error' => 'Student profile not found. Please contact administrator.']);
+            // Instead of redirecting, show an error message on the same page
+            return view('book.student_request', [
+                'student' => null,
+                'books' => collect(),
+                'error' => 'Student profile not found. Please contact administrator to complete your profile setup.'
+            ]);
         }
 
         return view('book.student_request', [

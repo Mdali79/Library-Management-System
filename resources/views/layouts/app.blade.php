@@ -3,10 +3,13 @@
 
 <head>
     <meta charset="utf-8">
-    <title>{{ config('app.name', 'Library Management System') }}</title>
+    <title>eLibrary - Library Management System</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" type="image/png" href="{{ asset('images/library.png') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('images/library.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/library.png') }}">
     <link rel="stylesheet" href="{{ asset('css/bootstrap.css') }}"> <!-- Bootstrap -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}"> <!-- Custom stylesheet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <!-- Font Awesome -->
