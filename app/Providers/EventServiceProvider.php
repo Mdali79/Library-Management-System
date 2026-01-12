@@ -15,9 +15,10 @@ class EventServiceProvider extends ServiceProvider
      * @var array<class-string, array<int, class-string>>
      */
     protected $listen = [
-        Registered::class => [
-            SendEmailVerificationNotification::class,
-        ],
+        // DISABLED: We use custom OTP verification, not Laravel's default email verification
+        // Registered::class => [
+        //     SendEmailVerificationNotification::class,
+        // ],
     ];
 
     /**

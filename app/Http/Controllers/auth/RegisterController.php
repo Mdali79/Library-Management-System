@@ -189,10 +189,10 @@ class RegisterController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'session_id' => session()->getId()
             ]);
-            
+
             // Clear session to prevent any bypass attempts
             session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
-            
+
             // Return error - DO NOT proceed with registration
             return redirect()->back()
                 ->withErrors(['email' => 'Failed to send verification email. Please check your email configuration. Error: ' . $e->getMessage()])
@@ -217,6 +217,32 @@ class RegisterController extends Controller
             'email' => $request->email,
             'session_id' => session()->getId()
         ]);
+
+        // CRITICAL SAFEGUARD: Verify no user was created during registration
+        // User should ONLY be created in verifyOtp() after OTP verification
+        $existingUser = User::where('email', $request->email)
+            ->orWhere('username', $request->username)
+            ->first();
+
+        if ($existingUser) {
+            \Log::error('SECURITY BREACH: User was created during registration - should not happen!', [
+                'email' => $request->email,
+                'username' => $request->username,
+                'user_id' => $existingUser->id,
+                'registration_status' => $existingUser->registration_status,
+                'is_verified' => $existingUser->is_verified,
+                'session_id' => session()->getId()
+            ]);
+
+            // Delete the incorrectly created user
+            $existingUser->delete();
+
+            // Clear session and return error
+            session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
+            return redirect()->back()
+                ->withErrors(['error' => 'A security error occurred. Please try registering again.'])
+                ->withInput();
+        }
 
         // Redirect to OTP verification page
         return redirect()->route('verify.otp')->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
@@ -316,7 +342,7 @@ class RegisterController extends Controller
         }
 
         $user = User::create($userData);
-        
+
         \Log::info('User created after OTP verification', [
             'user_id' => $user->id,
             'email' => $user->email,

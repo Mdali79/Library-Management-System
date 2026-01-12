@@ -13,15 +13,30 @@ class UserObserver
      */
     public function creating(User $user): void
     {
-        // Log stack trace to see where user is being created from
-        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
+        // Log full stack trace to see where user is being created from
+        $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 15);
         $caller = '';
+        $fullCallStack = [];
         foreach ($backtrace as $trace) {
             if (isset($trace['class']) && isset($trace['function'])) {
-                $caller = $trace['class'] . '::' . $trace['function'];
-                if (strpos($caller, 'RegisterController') !== false || 
-                    strpos($caller, 'UserRegistrationController') !== false ||
-                    strpos($caller, 'UserObserver') === false) {
+                $traceCaller = $trace['class'] . '::' . $trace['function'];
+                $fullCallStack[] = $traceCaller;
+                if (empty($caller) && (
+                    strpos($traceCaller, 'RegisterController') !== false ||
+                    strpos($traceCaller, 'UserRegistrationController') !== false ||
+                    strpos($traceCaller, 'UserObserver') === false
+                )) {
+                    $caller = $traceCaller;
+                }
+            }
+        }
+        
+        // If no clear caller found, use the first non-observer entry
+        if (empty($caller) && !empty($fullCallStack)) {
+            foreach ($fullCallStack as $stackCaller) {
+                if (strpos($stackCaller, 'UserObserver') === false && 
+                    strpos($stackCaller, 'Eloquent') === false) {
+                    $caller = $stackCaller;
                     break;
                 }
             }
@@ -33,7 +48,8 @@ class UserObserver
             'role' => $user->role,
             'is_verified' => $user->is_verified,
             'registration_status' => $user->registration_status,
-            'created_from' => $caller
+            'created_from' => $caller,
+            'call_stack' => array_slice($fullCallStack, 0, 5) // First 5 entries of call stack
         ]);
 
         // CRITICAL: Ensure registration_status is set
@@ -42,6 +58,31 @@ class UserObserver
             Log::warning('User created without registration_status - setting to pending', [
                 'email' => $user->email,
                 'username' => $user->username
+            ]);
+            $user->registration_status = 'pending';
+        }
+
+        // CRITICAL: Prevent users from being created with 'approved' status unless from admin approval
+        // Only UserRegistrationController::approve should set status to 'approved'
+        $isFromAdminApproval = false;
+        foreach ($backtrace as $trace) {
+            if (isset($trace['class']) && isset($trace['function'])) {
+                $traceCaller = $trace['class'] . '::' . $trace['function'];
+                if (strpos($traceCaller, 'UserRegistrationController') !== false && 
+                    strpos($traceCaller, 'approve') !== false) {
+                    $isFromAdminApproval = true;
+                    break;
+                }
+            }
+        }
+
+        // If user is being created with 'approved' status but NOT from admin approval, force to 'pending'
+        if ($user->registration_status === 'approved' && !$isFromAdminApproval) {
+            Log::error('SECURITY: User created with approved status without admin approval - forcing to pending', [
+                'email' => $user->email,
+                'username' => $user->username,
+                'created_from' => $caller,
+                'backtrace' => array_slice($backtrace, 0, 5)
             ]);
             $user->registration_status = 'pending';
         }
