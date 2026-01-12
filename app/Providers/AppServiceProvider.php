@@ -23,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Register User observer to track user creation and status changes
+        \App\Models\User::observe(\App\Observers\UserObserver::class);
     }
 }

@@ -25,9 +25,20 @@ class RegisterController extends Controller
 
     /**
      * Handle registration
+     * IMPORTANT: This method only stores registration data in session and sends OTP.
+     * User account is ONLY created in verifyOtp() after OTP verification.
      */
     public function register(Request $request)
     {
+        \Log::info('Registration request received', [
+            'email' => $request->email,
+            'username' => $request->username,
+            'role' => $request->role,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'session_id' => session()->getId()
+        ]);
+
         // Conditional validation based on role
         $rules = [
             'name' => 'required|string|max:255',
@@ -151,16 +162,61 @@ class RegisterController extends Controller
             'otp_expires_at' => $otpExpiresAt->timestamp,
         ]);
 
-        // Send OTP email
+        // CRITICAL: Send OTP email - Registration CANNOT proceed without this
+        \Log::info('Attempting to send OTP email', [
+            'email' => $request->email,
+            'name' => $request->name,
+            'role' => $registrationData['role'],
+            'session_id' => session()->getId()
+        ]);
+
         try {
             Mail::to($request->email)->send(new OtpVerificationMail($otp, $request->name));
+            \Log::info('OTP email sent successfully', [
+                'email' => $request->email,
+                'otp' => $otp,
+                'session_id' => session()->getId()
+            ]);
         } catch (\Exception $e) {
-            // If email fails, clear session and show error
+            // CRITICAL: Log the error and STOP registration
+            \Log::error('CRITICAL: Failed to send OTP email - Registration stopped', [
+                'email' => $request->email,
+                'name' => $request->name,
+                'error' => $e->getMessage(),
+                'error_code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'session_id' => session()->getId()
+            ]);
+            
+            // Clear session to prevent any bypass attempts
             session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
+            
+            // Return error - DO NOT proceed with registration
             return redirect()->back()
-                ->withErrors(['email' => 'Failed to send verification email. Please check your email address and try again.'])
+                ->withErrors(['email' => 'Failed to send verification email. Please check your email configuration. Error: ' . $e->getMessage()])
                 ->withInput();
         }
+
+        // Verify session was saved before redirecting
+        if (!session()->has('registration_data') || !session()->has('otp_code')) {
+            \Log::error('CRITICAL: Session data lost after email send - Registration stopped', [
+                'email' => $request->email,
+                'has_registration_data' => session()->has('registration_data'),
+                'has_otp_code' => session()->has('otp_code'),
+                'session_id' => session()->getId()
+            ]);
+            session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
+            return redirect()->back()
+                ->withErrors(['error' => 'Session error occurred. Please try registering again.'])
+                ->withInput();
+        }
+
+        \Log::info('Redirecting to OTP verification page', [
+            'email' => $request->email,
+            'session_id' => session()->getId()
+        ]);
 
         // Redirect to OTP verification page
         return redirect()->route('verify.otp')->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
@@ -227,6 +283,13 @@ class RegisterController extends Controller
         }
 
         // OTP is valid, create user account
+        \Log::info('OTP verified successfully - Creating user account', [
+            'email' => $registrationData['email'],
+            'username' => $registrationData['username'],
+            'role' => $registrationData['role'],
+            'session_id' => session()->getId()
+        ]);
+
         $userData = [
             'name' => $registrationData['name'],
             'username' => $registrationData['username'],
@@ -234,9 +297,9 @@ class RegisterController extends Controller
             'contact' => $registrationData['contact'],
             'role' => $registrationData['role'],
             'password' => Hash::make($registrationData['password']),
-            'is_verified' => true,
+            'is_verified' => true, // Email verified via OTP
             'email_verified_at' => now(),
-            'registration_status' => 'pending', // Still requires admin approval
+            'registration_status' => 'pending', // CRITICAL: Must be pending until admin approves
         ];
 
         // Add role-specific fields
@@ -253,6 +316,15 @@ class RegisterController extends Controller
         }
 
         $user = User::create($userData);
+        
+        \Log::info('User created after OTP verification', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'username' => $user->username,
+            'is_verified' => $user->is_verified,
+            'registration_status' => $user->registration_status,
+            'session_id' => session()->getId()
+        ]);
 
         // Clear session data
         session()->forget(['registration_data', 'otp_code', 'otp_expires_at']);
