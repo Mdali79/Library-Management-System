@@ -450,8 +450,7 @@
         })();
 
         // Dashboard Search Suggestions - AJAX based
-        // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', function() {
+        function initializeDashboardSearch() {
             const dashboardSearchInput = document.getElementById('dashboard-search-input');
             const dashboardSuggestionsDiv = document.getElementById('dashboard-suggestions');
 
@@ -584,11 +583,16 @@
                         div.appendChild(icon);
                         div.appendChild(text);
 
-                        div.addEventListener('click', function() {
+                        div.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
                             dashboardSearchInput.value = item.text;
-                            dashboardSearchInput.focus();
                             dashboardSuggestionsDiv.style.display = 'none';
-                            // Don't auto-submit - let user review and click search button
+                            // Submit the form to search for the selected item
+                            const form = document.getElementById('dashboard-search-form');
+                            if (form) {
+                                form.submit();
+                            }
                         });
 
                         dashboardSuggestionsDiv.appendChild(div);
@@ -647,7 +651,15 @@
                 dashboardSuggestionsDiv.style.display = 'none';
             }
         });
-        });
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboardSearch);
+        } else {
+            // DOM already loaded
+            initializeDashboardSearch();
+        }
 
         // Welcome Splash Screen - Auto hide after 2.5 seconds
         // Only show on successful login, not on page reload
