@@ -173,8 +173,13 @@ class RegisterController extends Controller
     {
         // Check if registration data exists in session
         if (!session()->has('registration_data') || !session()->has('otp_code')) {
+            \Log::warning('OTP verification page accessed without session data', [
+                'has_registration_data' => session()->has('registration_data'),
+                'has_otp_code' => session()->has('otp_code'),
+                'session_id' => session()->getId()
+            ]);
             return redirect()->route('register')
-                ->withErrors(['error' => 'Your registration session has expired. Please register again.']);
+                ->withErrors(['error' => 'Your registration session has expired or was not found. Please register again. If this problem persists, check your session configuration.']);
         }
 
         $registrationData = session('registration_data');

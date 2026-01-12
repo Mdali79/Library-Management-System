@@ -10,6 +10,7 @@ use App\Http\Controllers\PublisherController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StudentController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 
@@ -159,4 +160,32 @@ Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/update', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+
+    // Diagnostic route for registration issues (Admin only, temporary - remove after fixing)
+    Route::get('/diagnostics/registration', function () {
+        if (Auth::user()->role !== 'Admin') {
+            abort(403, 'Access denied. Only Administrators can access diagnostics.');
+        }
+
+        return response()->json([
+            'mail_driver' => config('mail.default'),
+            'mail_host' => config('mail.mailers.smtp.host'),
+            'mail_port' => config('mail.mailers.smtp.port'),
+            'mail_username_set' => !empty(config('mail.mailers.smtp.username')),
+            'mail_password_set' => !empty(config('mail.mailers.smtp.password')),
+            'mail_encryption' => config('mail.mailers.smtp.encryption'),
+            'mail_from_address' => config('mail.from.address'),
+            'mail_from_name' => config('mail.from.name'),
+            'queue_connection' => config('queue.default'),
+            'session_driver' => config('session.driver'),
+            'session_lifetime' => config('session.lifetime'),
+            'session_secure_cookie' => config('session.secure'),
+            'session_same_site' => config('session.same_site'),
+            'app_env' => config('app.env'),
+            'app_debug' => config('app.debug'),
+            'session_id' => session()->getId(),
+            'session_storage_path' => config('session.files') ? storage_path('framework/sessions') : 'N/A',
+            'session_storage_writable' => config('session.driver') === 'file' ? is_writable(storage_path('framework/sessions')) : 'N/A',
+        ]);
+    })->name('diagnostics.registration');
 });
