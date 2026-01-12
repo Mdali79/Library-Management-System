@@ -130,7 +130,7 @@
 
                             <hr>
 
-                            <a href="{{ route('book_issue.create') }}" class="btn btn-danger btn-block">
+                            <a href="{{ route('book_issue.create') }}" class="btn btn-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                                 <i class="fas fa-book"></i> Request Full Book
                             </a>
                         </div>

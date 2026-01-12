@@ -173,6 +173,14 @@ class dashboardController extends Controller
         $categorySuggestions = category::orderBy('id', 'desc')->limit(5)->pluck('name')->toArray();
         $data['search_suggestions'] = array_merge($bookSuggestions, $authorSuggestions, $categorySuggestions);
 
+        // Check if we should show welcome splash (only on login success)
+        $data['show_welcome_splash'] = session()->has('show_welcome_splash') && session('show_welcome_splash');
+
+        // Clear the session flag after checking (so it doesn't show on page reload)
+        if ($data['show_welcome_splash']) {
+            session()->forget('show_welcome_splash');
+        }
+
         return view('dashboard', $data);
     }
 

@@ -47,10 +47,15 @@
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> Password</label>
-                            <input type="password" name="password" class="form-control"
-                                placeholder="Enter your password" required>
+                            <div style="position: relative;">
+                                <input type="password" name="password" id="password" class="form-control"
+                                    placeholder="Enter your password" required style="padding-right: 45px;">
+                                <button type="button" id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #6c757d; cursor: pointer; padding: 5px; z-index: 10;">
+                                    <i class="fas fa-eye" id="eyeIcon"></i>
+                                </button>
+                            </div>
                         </div>
-                        <button type="submit" name="login" class="btn btn-danger btn-lg btn-block">
+                        <button type="submit" name="login" class="btn btn-primary btn-lg btn-block" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             <i class="fas fa-sign-in-alt"></i> Login
                         </button>
                         <div class="mt-3 text-center">
@@ -88,5 +93,38 @@
             padding: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
+        #togglePassword {
+            transition: color 0.2s ease;
+        }
+        #togglePassword:hover {
+            color: #2563eb !important;
+        }
+        #togglePassword:focus {
+            outline: none;
+        }
     </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (togglePassword && passwordInput && eyeIcon) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+
+                    // Toggle eye icon
+                    if (type === 'password') {
+                        eyeIcon.classList.remove('fa-eye-slash');
+                        eyeIcon.classList.add('fa-eye');
+                    } else {
+                        eyeIcon.classList.remove('fa-eye');
+                        eyeIcon.classList.add('fa-eye-slash');
+                    }
+                });
+            }
+        });
+    </script>
 @endsection

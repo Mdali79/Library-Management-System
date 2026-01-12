@@ -96,7 +96,9 @@
                             <li><a href="{{ route('fines.index') }}" class="{{ request()->routeIs('fines.*') ? 'active' : '' }}"><i class="fas fa-dollar-sign"></i> My Fines</a></li>
                             <li><a href="{{ route('reading.index') }}" class="{{ request()->routeIs('reading.*') ? 'active' : '' }}"><i class="fas fa-book-reader"></i> Read Books Online</a></li>
                         @endif
-                        <li><a href="{{ route('reports') }}" class="{{ request()->routeIs('reports') || request()->routeIs('reports.*') ? 'active' : '' }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                        @if(auth()->user()->role == 'Admin')
+                            <li><a href="{{ route('reports') }}" class="{{ request()->routeIs('reports') || request()->routeIs('reports.*') ? 'active' : '' }}"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                        @endif
                         @if(auth()->user()->role == 'Admin')
                             <li><a href="{{ route('registrations.pending') }}" class="{{ request()->routeIs('registrations.*') ? 'active' : '' }}"><i class="fas fa-user-clock"></i> Pending Registrations</a></li>
                         @endif
@@ -134,6 +136,50 @@
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
+    <style>
+        /* Global styles for all search suggestion dropdowns across the project */
+        .suggestions-dropdown {
+            position: absolute !important;
+            background: white !important;
+            z-index: 999999 !important;
+            top: 100% !important;
+            left: 0 !important;
+            margin-top: 2px !important;
+        }
+        /* Prevent parent containers from clipping dropdowns */
+        .card, .card-body, .card-header, .row, .container, #admin-content,
+        .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6,
+        .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12,
+        form, #author-search-form, #book-search-form, #dashboard-search-form {
+            overflow: visible !important;
+        }
+        /* Ensure form groups with search inputs have proper positioning */
+        .form-group[style*="position: relative"],
+        .form-group {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        /* Ensure tables don't overlap dropdowns - lower z-index and remove overflow */
+        .content-table,
+        #admin-content .content-table,
+        table.content-table,
+        table.content-table thead,
+        #admin-content .content-table thead {
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: visible !important;
+        }
+        /* Override the overflow: hidden from style.css */
+        #admin-content .content-table {
+            overflow: visible !important;
+        }
+        /* Ensure all rows with tables have lower z-index */
+        .row .content-table,
+        .row table.content-table {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+    </style>
     <script>
         // Ensure profile dropdown works reliably - simplified and robust approach
         (function() {

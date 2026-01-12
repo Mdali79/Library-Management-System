@@ -15,20 +15,20 @@
                     <div class="message"></div>
                     <table class="content-table">
                         <thead>
-                            <th>S.No</th>
-                            <th>Publisher Name</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
+                            <th style="text-align: center;">S.No</th>
+                            <th style="text-align: center;">Publisher Name</th>
+                            <th style="text-align: center;">Edit</th>
+                            <th style="text-align: center;">Delete</th>
                         </thead>
                         <tbody>
                             @forelse ($publishers as $publisher)
                                 <tr>
-                                    <td>{{ $publisher->id }}</td>
-                                    <td>{{ $publisher->name }}</td>
-                                    <td class="edit">
+                                    <td style="text-align: center;">{{ $publisher->id }}</td>
+                                    <td style="text-align: center;">{{ $publisher->name }}</td>
+                                    <td class="edit" style="text-align: center;">
                                         <a href="{{ route('publisher.edit', $publisher) }}" class="btn btn-success">Edit</a>
                                     </td>
-                                    <td class="delete">
+                                    <td class="delete" style="text-align: center;">
                                         <form action="{{ route('publisher.destroy', $publisher) }}" method="post"
                                             class="form-hidden">
                                             <button class="btn btn-danger delete-author">Delete</button>

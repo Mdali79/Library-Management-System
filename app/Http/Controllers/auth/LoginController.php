@@ -47,6 +47,8 @@ class LoginController extends Controller
         ];
 
         if (Auth::attempt($credentials)) {
+            // Set session flag to show welcome splash screen only on login success
+            $request->session()->put('show_welcome_splash', true);
             return redirect('/dashboard');
         } else {
             return redirect()->back()->withErrors(['username' => 'Invalid username or password'])->withInput($request->only('username'));

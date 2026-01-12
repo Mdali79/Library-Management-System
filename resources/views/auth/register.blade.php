@@ -214,7 +214,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" name="register" class="btn btn-danger btn-lg btn-block" id="registerBtn">
+                        <button type="submit" name="register" class="btn btn-primary btn-lg btn-block" id="registerBtn" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             <i class="fas fa-user-plus"></i> Register
                         </button>
                         <div class="mt-3 text-center">

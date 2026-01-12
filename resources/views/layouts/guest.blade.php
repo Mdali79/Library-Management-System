@@ -23,6 +23,50 @@
     <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
+    <style>
+        /* Global styles for all search suggestion dropdowns across the project */
+        .suggestions-dropdown {
+            position: absolute !important;
+            background: white !important;
+            z-index: 999999 !important;
+            top: 100% !important;
+            left: 0 !important;
+            margin-top: 2px !important;
+        }
+        /* Prevent parent containers from clipping dropdowns */
+        .card, .card-body, .card-header, .row, .container, #admin-content,
+        .col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6,
+        .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12,
+        form {
+            overflow: visible !important;
+        }
+        /* Ensure form groups with search inputs have proper positioning */
+        .form-group[style*="position: relative"],
+        .form-group {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        /* Ensure tables don't overlap dropdowns - lower z-index and remove overflow */
+        .content-table,
+        #admin-content .content-table,
+        table.content-table,
+        table.content-table thead,
+        #admin-content .content-table thead {
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: visible !important;
+        }
+        /* Override the overflow: hidden from style.css */
+        #admin-content .content-table {
+            overflow: visible !important;
+        }
+        /* Ensure all rows with tables have lower z-index */
+        .row .content-table,
+        .row table.content-table {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+    </style>
 </body>
 
 </html>

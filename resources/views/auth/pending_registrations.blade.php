@@ -24,38 +24,38 @@
                     @endif
                     <table class="content-table">
                         <thead>
-                            <th>S.No</th>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Contact</th>
-                            <th>Role</th>
-                            <th>Department</th>
-                            <th>Registration Date</th>
-                            <th>Actions</th>
+                            <th style="text-align: center;">S.No</th>
+                            <th style="text-align: center;">Name</th>
+                            <th style="text-align: center;">Username</th>
+                            <th style="text-align: center;">Email</th>
+                            <th style="text-align: center;">Contact</th>
+                            <th style="text-align: center;">Role</th>
+                            <th style="text-align: center;">Department</th>
+                            <th style="text-align: center;">Registration Date</th>
+                            <th style="text-align: center;">Actions</th>
                         </thead>
                         <tbody>
                             @forelse ($pendingRegistrations as $registration)
                                 <tr>
-                                    <td>{{ $registration->id }}</td>
-                                    <td><strong>{{ $registration->name }}</strong></td>
-                                    <td>{{ $registration->username }}</td>
-                                    <td>{{ $registration->email ?? 'N/A' }}</td>
-                                    <td>{{ $registration->contact ?? 'N/A' }}</td>
-                                    <td>
+                                    <td style="text-align: center;">{{ $registration->id }}</td>
+                                    <td style="text-align: center;"><strong>{{ $registration->name }}</strong></td>
+                                    <td style="text-align: center;">{{ $registration->username }}</td>
+                                    <td style="text-align: center;">{{ $registration->email ?? 'N/A' }}</td>
+                                    <td style="text-align: center;">{{ $registration->contact ?? 'N/A' }}</td>
+                                    <td style="text-align: center;">
                                         @if($registration->role == 'Admin')
                                             <span class='badge badge-danger'>Admin</span>
                                         @else
                                             <span class='badge badge-info'>{{ $registration->role }}</span>
                                         @endif
                                     </td>
-                                    <td>{{ $registration->department ?? 'N/A' }}</td>
-                                    <td>{{ $registration->created_at->format('d M, Y') }}</td>
-                                    <td>
+                                    <td style="text-align: center;">{{ $registration->department ?? 'N/A' }}</td>
+                                    <td style="text-align: center;">{{ $registration->created_at->format('d M, Y') }}</td>
+                                    <td style="text-align: center;">
                                         <div class="btn-group" role="group">
                                             <form action="{{ route('registrations.approve', $registration->id) }}" method="post" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-sm" 
+                                                <button type="submit" class="btn btn-success btn-sm"
                                                     onclick="return confirm('Approve registration for {{ $registration->name }} as {{ $registration->role }}?')">
                                                     <i class="fas fa-check"></i> Approve
                                                 </button>
@@ -87,9 +87,9 @@
                                                     @endif
                                                     <div class="form-group">
                                                         <label for="rejection_reason{{ $registration->id }}">Rejection Reason <span class="text-danger">*</span></label>
-                                                        <textarea name="rejection_reason" id="rejection_reason{{ $registration->id }}" 
-                                                            class="form-control @error('rejection_reason') is-invalid @enderror" 
-                                                            rows="3" required 
+                                                        <textarea name="rejection_reason" id="rejection_reason{{ $registration->id }}"
+                                                            class="form-control @error('rejection_reason') is-invalid @enderror"
+                                                            rows="3" required
                                                             placeholder="Please provide a reason for rejection...">{{ old('rejection_reason') }}</textarea>
                                                         @error('rejection_reason')
                                                             <div class="text-danger mt-1">{{ $message }}</div>

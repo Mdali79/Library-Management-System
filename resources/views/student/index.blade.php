@@ -15,31 +15,31 @@
                     <div class="message"></div>
                     <table class="content-table">
                         <thead>
-                            <th>S.No</th>
-                            <th>Student Name</th>
-                            <th>Gender</th>
-                            <th>Phone</th>
-                            <th>Email</th>
-                            <th>View</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
+                            <th style="text-align: center;">S.No</th>
+                            <th style="text-align: center;">Student Name</th>
+                            <th style="text-align: center;">Gender</th>
+                            <th style="text-align: center;">Phone</th>
+                            <th style="text-align: center;">Email</th>
+                            <th style="text-align: center;">View</th>
+                            <th style="text-align: center;">Edit</th>
+                            <th style="text-align: center;">Delete</th>
                         </thead>
                         <tbody>
                             @forelse ($students as $student)
                                 <tr>
-                                    <td class="id">{{ $student->id }}</td>
-                                    <td>{{ $student->name }}</td>
-                                    <td class="text-capitalize">{{ $student->gender }}</td>
-                                    <td>{{ $student->phone }}</td>
-                                    <td>{{ $student->email }}</td>
-                                    <td class="view">
+                                    <td class="id" style="text-align: center;">{{ $student->id }}</td>
+                                    <td style="text-align: center;">{{ $student->name }}</td>
+                                    <td class="text-capitalize" style="text-align: center;">{{ $student->gender }}</td>
+                                    <td style="text-align: center;">{{ $student->phone }}</td>
+                                    <td style="text-align: center;">{{ $student->email }}</td>
+                                    <td class="view" style="text-align: center;">
                                         <button data-sid='{{ $student->id }}>'
                                             class="btn btn-primary view-btn">View</button>
                                     </td>
-                                    <td class="edit">
+                                    <td class="edit" style="text-align: center;">
                                         <a href="{{ route('student.edit', $student) }}>" class="btn btn-success">Edit</a>
                                     </td>
-                                    <td class="delete">
+                                    <td class="delete" style="text-align: center;">
                                         <form action="{{ route('student.destroy', $student->id) }}" method="post"
                                             class="form-hidden">
                                             <button class="btn btn-danger delete-student">Delete</button>

@@ -25,29 +25,39 @@ class BookController extends Controller
 
         // Advanced search filters
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('isbn', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('auther', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('authors', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('publisher', function($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  });
-            });
+            $search = trim($request->search);
+
+            // Check if there's an exact book name match
+            $exactMatch = book::where('name', '=', $search)->exists();
+
+            if ($exactMatch) {
+                // If exact match exists, only search by exact book name
+                $query->where('name', '=', $search);
+            } else {
+                // Otherwise, do broader search across multiple fields
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('isbn', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhereHas('auther', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('authors', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('publisher', function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%");
+                        });
+                });
+            }
         }
 
         if ($request->filled('author')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('auther_id', $request->author)
-                  ->orWhereHas('authors', function($q2) use ($request) {
-                      $q2->where('authers.id', $request->author);
-                  });
+                    ->orWhereHas('authors', function ($q2) use ($request) {
+                        $q2->where('authers.id', $request->author);
+                    });
             });
         }
 
@@ -81,7 +91,7 @@ class BookController extends Controller
 
         // Get keyword suggestions for search - comprehensive list
         $suggestions = $this->getKeywordSuggestions($request->get('search', ''));
-        
+
         return view('book.index', [
             'books' => $query->latest()->paginate(10),
             'authors' => auther::latest()->get(),
@@ -103,8 +113,8 @@ class BookController extends Controller
         if (Auth::user()->role !== 'Admin') {
             return redirect()->route('books')->withErrors(['error' => 'You do not have permission to create books.']);
         }
-        
-        return view('book.create',[
+
+        return view('book.create', [
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
             'categories' => category::latest()->get(),
@@ -123,13 +133,13 @@ class BookController extends Controller
         if (Auth::user()->role !== 'Admin') {
             return redirect()->route('books')->withErrors(['error' => 'You do not have permission to create books.']);
         }
-        
+
         $data = $request->validated();
-        
+
         // Extract authors data before creating book
         $authorsData = $data['authors'] ?? [];
         unset($data['authors']);
-        
+
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             $image = $request->file('cover_image');
@@ -172,7 +182,7 @@ class BookController extends Controller
         }
 
         $book = book::create($data);
-        
+
         // Sync authors to pivot table (no roles needed)
         $authorIds = [];
         foreach ($authorsData as $author) {
@@ -181,7 +191,7 @@ class BookController extends Controller
             }
         }
         $book->authors()->sync($authorIds);
-        
+
         return redirect()->route('books')->with('success', 'Book added successfully');
     }
 
@@ -198,11 +208,11 @@ class BookController extends Controller
         if (Auth::user()->role !== 'Admin') {
             return redirect()->route('books')->withErrors(['error' => 'You do not have permission to edit books.']);
         }
-        
+
         // Load existing authors with their roles
         $book->load('authors');
-        
-        return view('book.edit',[
+
+        return view('book.edit', [
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
             'categories' => category::latest()->get(),
@@ -223,14 +233,14 @@ class BookController extends Controller
         if (Auth::user()->role !== 'Admin') {
             return redirect()->route('books')->withErrors(['error' => 'You do not have permission to update books.']);
         }
-        
+
         $book = book::find($id);
         $data = $request->validated();
-        
+
         // Extract authors data before updating book
         $authorsData = $data['authors'] ?? [];
         unset($data['authors']);
-        
+
         // Handle cover image upload
         if ($request->hasFile('cover_image')) {
             // Delete old image if exists
@@ -280,7 +290,7 @@ class BookController extends Controller
         }
 
         $book->update($data);
-        
+
         // Sync authors to pivot table (no roles needed)
         $authorIds = [];
         foreach ($authorsData as $author) {
@@ -289,7 +299,7 @@ class BookController extends Controller
             }
         }
         $book->authors()->sync($authorIds);
-        
+
         return redirect()->route('books')->with('success', 'Book updated successfully');
     }
 
@@ -305,7 +315,7 @@ class BookController extends Controller
         if (Auth::user()->role !== 'Admin') {
             return redirect()->route('books')->withErrors(['error' => 'You do not have permission to delete books.']);
         }
-        
+
         book::find($id)->delete();
         return redirect()->route('books');
     }
@@ -319,57 +329,57 @@ class BookController extends Controller
     private function getKeywordSuggestions($searchTerm = '')
     {
         $suggestions = [];
-        
+
         if (!empty($searchTerm)) {
             $searchTerm = trim($searchTerm);
-            
+
             // Get book name suggestions
             $bookSuggestions = book::where('name', 'like', "%{$searchTerm}%")
                 ->limit(8)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'book', 'icon' => '📚'];
                 })
                 ->toArray();
-            
+
             // Get author name suggestions
             $authorSuggestions = auther::where('name', 'like', "%{$searchTerm}%")
                 ->limit(8)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'author', 'icon' => '✍️'];
                 })
                 ->toArray();
-            
+
             // Get ISBN suggestions
             $isbnSuggestions = book::where('isbn', 'like', "%{$searchTerm}%")
                 ->whereNotNull('isbn')
                 ->where('isbn', '!=', '')
                 ->limit(5)
                 ->pluck('isbn')
-                ->map(function($isbn) {
+                ->map(function ($isbn) {
                     return ['text' => $isbn, 'type' => 'isbn', 'icon' => '🔢'];
                 })
                 ->toArray();
-            
+
             // Get category suggestions
             $categorySuggestions = category::where('name', 'like', "%{$searchTerm}%")
                 ->limit(5)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'category', 'icon' => '📂'];
                 })
                 ->toArray();
-            
+
             // Get publisher suggestions
             $publisherSuggestions = publisher::where('name', 'like', "%{$searchTerm}%")
                 ->limit(5)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'publisher', 'icon' => '🏢'];
                 })
                 ->toArray();
-            
+
             $suggestions = array_merge(
                 $bookSuggestions,
                 $authorSuggestions,
@@ -382,30 +392,30 @@ class BookController extends Controller
             $bookSuggestions = book::orderBy('id', 'desc')
                 ->limit(8)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'book', 'icon' => '📚'];
                 })
                 ->toArray();
-            
+
             $authorSuggestions = auther::orderBy('id', 'desc')
                 ->limit(8)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'author', 'icon' => '✍️'];
                 })
                 ->toArray();
-            
+
             $categorySuggestions = category::orderBy('id', 'desc')
                 ->limit(5)
                 ->pluck('name')
-                ->map(function($name) {
+                ->map(function ($name) {
                     return ['text' => $name, 'type' => 'category', 'icon' => '📂'];
                 })
                 ->toArray();
-            
+
             $suggestions = array_merge($bookSuggestions, $authorSuggestions, $categorySuggestions);
         }
-        
+
         return array_slice($suggestions, 0, 15);
     }
 
@@ -419,7 +429,7 @@ class BookController extends Controller
     {
         $searchTerm = $request->get('q', '');
         $suggestions = $this->getKeywordSuggestions($searchTerm);
-        
+
         return response()->json($suggestions);
     }
 }

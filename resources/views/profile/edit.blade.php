@@ -32,12 +32,21 @@
                         <div class="form-group text-center mb-4">
                             <label>Profile Picture</label>
                             <div class="mb-3">
-                                @if($user->profile_picture)
+                                @php
+                                    $hasProfilePicture = !empty($user->profile_picture) && $user->profile_picture !== null && $user->profile_picture !== '';
+                                @endphp
+                                @if($hasProfilePicture)
                                     <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
                                         alt="{{ $user->name }}"
                                         id="profile-preview"
                                         class="profile-image-clickable"
-                                        style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
+                                        style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                    <div id="profile-preview-fallback" class="profile-image-clickable" style="display: none; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
+                                        <span style="font-size: 4rem; color: white;">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                    </div>
                                 @else
                                     <div id="profile-preview" class="profile-image-clickable"
                                         style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
@@ -50,6 +59,15 @@
                             <input type="file" class="form-control @error('profile_picture') is-invalid @enderror"
                                 name="profile_picture" id="profile_picture" accept="image/*" style="display: none;">
                             <small class="form-text text-muted">Click on the image above to upload. Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
+                            <div class="mt-3" id="remove-profile-section" style="{{ $hasProfilePicture ? '' : 'display: none;' }}">
+                                <button type="button" class="btn btn-outline-danger btn-sm" id="remove-profile-btn" style="width: 100%;" {{ $hasProfilePicture ? '' : 'disabled' }}>
+                                    <i class="fas fa-trash-alt"></i> Remove Profile Picture
+                                </button>
+                                <input type="hidden" name="remove_profile_picture" id="remove_profile_picture" value="0">
+                                <small class="form-text text-danger mt-2" id="remove-warning" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle"></i> Profile picture will be removed and default avatar (human icon) will be used after you click "Update Profile".
+                                </small>
+                            </div>
                             @error('profile_picture')
                                 <div class="alert alert-danger" role="alert">
                                     {{ $message }}
@@ -177,7 +195,7 @@
                         </div>
                         @endif
 
-                        <button type="submit" name="save" class="btn btn-danger btn-lg btn-block">
+                        <button type="submit" name="save" class="btn btn-primary btn-lg btn-block" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             <i class="fas fa-save"></i> Update Profile
                         </button>
                     </form>
@@ -275,10 +293,89 @@
 
                                 preview.parentNode.replaceChild(img, preview);
                             }
+
+                            // Show remove button section when new image is selected
+                            const removeSection = document.getElementById('remove-profile-section');
+                            const removeBtn = document.getElementById('remove-profile-btn');
+                            if (removeSection) {
+                                removeSection.style.display = 'block';
+                            }
+                            if (removeBtn) {
+                                removeBtn.disabled = false;
+                            }
+
+                            // Reset remove button when new image is selected
+                            const removeInput = document.getElementById('remove_profile_picture');
+                            if (removeInput) {
+                                removeInput.value = '0';
+                            }
+                            if (removeBtn) {
+                                removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove Profile Picture';
+                                removeBtn.classList.remove('btn-outline-secondary');
+                                removeBtn.classList.add('btn-outline-danger');
+                            }
+                            const removeWarning = document.getElementById('remove-warning');
+                            if (removeWarning) {
+                                removeWarning.style.display = 'none';
+                            }
                         };
                         reader.readAsDataURL(input.files[0]);
                     }
                 };
+
+                // Handle remove profile picture button
+                const removeBtn = document.getElementById('remove-profile-btn');
+                const removeInput = document.getElementById('remove_profile_picture');
+                const removeWarning = document.getElementById('remove-warning');
+                const removeSection = document.getElementById('remove-profile-section');
+                let isRemoving = false;
+                let originalImageSrc = null;
+
+                // Store original image source if it exists
+                const preview = document.getElementById('profile-preview');
+                if (preview && preview.tagName === 'IMG') {
+                    originalImageSrc = preview.src;
+                }
+
+                if (removeBtn && removeInput) {
+
+                    removeBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        isRemoving = !isRemoving;
+
+                        if (isRemoving) {
+                            // Set hidden input to 1 (remove)
+                            removeInput.value = '1';
+
+                            // Clear file input
+                            const fileInput = document.getElementById('profile_picture');
+                            if (fileInput) {
+                                fileInput.value = '';
+                            }
+
+                            // Update button and show warning
+                            removeBtn.innerHTML = '<i class="fas fa-undo"></i> Cancel Removal';
+                            removeBtn.classList.remove('btn-outline-danger');
+                            removeBtn.classList.add('btn-outline-secondary');
+
+                            if (removeWarning) {
+                                removeWarning.style.display = 'block';
+                            }
+                        } else {
+                            // Set hidden input to 0 (don't remove)
+                            removeInput.value = '0';
+
+                            // Update button and hide warning
+                            removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove Profile Picture';
+                            removeBtn.classList.remove('btn-outline-secondary');
+                            removeBtn.classList.add('btn-outline-danger');
+
+                            if (removeWarning) {
+                                removeWarning.style.display = 'none';
+                            }
+                        }
+                    });
+                }
             }
 
             // Initialize when DOM is ready

@@ -34,7 +34,7 @@ class ProfileController extends Controller
     public function update(Request $request)
     {
         $user = Auth::user();
-        
+
         $validationRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
@@ -70,13 +70,21 @@ class ProfileController extends Controller
             $data['department'] = $request->department;
         }
 
-        // Handle profile picture upload
-        if ($request->hasFile('profile_picture')) {
+        // Handle profile picture removal
+        if ($request->has('remove_profile_picture') && $request->remove_profile_picture == '1') {
             // Delete old profile picture if exists
             if ($user->profile_picture && Storage::exists('public/' . $user->profile_picture)) {
                 Storage::delete('public/' . $user->profile_picture);
             }
-            
+            $data['profile_picture'] = null;
+        }
+        // Handle profile picture upload (only if not removing)
+        elseif ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($user->profile_picture && Storage::exists('public/' . $user->profile_picture)) {
+                Storage::delete('public/' . $user->profile_picture);
+            }
+
             $image = $request->file('profile_picture');
             $imageName = time() . '_' . $image->getClientOriginalName();
             $image->storeAs('public/profile_pictures', $imageName);

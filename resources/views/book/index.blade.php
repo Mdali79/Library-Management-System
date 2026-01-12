@@ -19,15 +19,15 @@
             </div>
 
             <!-- Advanced Search Form -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="row mb-4" style="position: relative; z-index: 10 !important; overflow: visible !important;">
+                <div class="col-md-12" style="overflow: visible !important;">
+                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: visible !important; position: relative; z-index: 10 !important;">
                         <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none;">
                             <h5 style="margin: 0; font-weight: 600;">
                                 <i class="fas fa-search"></i> Advanced Search
                             </h5>
                         </div>
-                        <div class="card-body" style="background: #ffffff;">
+                        <div class="card-body" style="background: #ffffff; overflow: visible !important; position: relative; z-index: 10 !important;">
                             <form method="GET" action="{{ route('books') }}" id="book-search-form">
                                 <!-- Active Filters Display -->
                                 @if(!empty(array_filter($filters ?? [])))
@@ -131,52 +131,54 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-md-1">
                                         <div class="form-group">
                                             <label>&nbsp;</label>
-                                            <div class="d-flex" style="gap: 5px;">
-                                                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 0; flex: 1;">
-                                                    <i class="fas fa-search"></i> Search
-                                                </button>
-                                                @if(!empty(array_filter($filters ?? [])))
-                                                <a href="{{ route('books') }}" class="btn btn-outline-secondary" style="margin-top: 0; padding: 0.5rem 0.75rem;" title="Clear all filters">
-                                                    <i class="fas fa-times"></i>
-                                                </a>
-                                                @endif
-                                            </div>
+                                            <button type="submit" class="btn btn-block" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); border: none; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); height: 2.5rem; line-height: 1.5; padding: 0.5rem 0.5rem; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 100%;">
+                                                <i class="fas fa-search"></i> <span>Search</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
+                                @if(!empty(array_filter($filters ?? [])))
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <a href="{{ route('books') }}" class="btn btn-outline-secondary btn-sm" title="Clear all filters">
+                                            <i class="fas fa-times"></i> Clear All Filters
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-12">
+            <div class="row" style="position: relative; z-index: 1 !important; overflow: visible !important;">
+                <div class="col-md-12" style="overflow: visible !important;">
                     <div class="message"></div>
-                    <table class="content-table">
+                    <table class="content-table" style="overflow: visible !important;">
                         <thead>
-                            <th>S.No</th>
-                            <th>Cover</th>
-                            <th>Book Name</th>
-                            <th>ISBN</th>
-                            <th>Category</th>
-                            <th>Author</th>
-                            <th>Publisher</th>
-                            <th>Quantity</th>
-                            <th>Status</th>
+                            <th style="text-align: center;">S.No</th>
+                            <th style="text-align: center;">Cover</th>
+                            <th style="text-align: center;">Book Name</th>
+                            <th style="text-align: center;">ISBN</th>
+                            <th style="text-align: center;">Category</th>
+                            <th style="text-align: center;">Author</th>
+                            <th style="text-align: center;">Publisher</th>
+                            <th style="text-align: center;">Quantity</th>
+                            <th style="text-align: center;">Status</th>
                             @if(auth()->user()->role == 'Admin')
-                                <th>Edit</th>
-                                <th>Delete</th>
+                                <th style="text-align: center;">Edit</th>
+                                <th style="text-align: center;">Delete</th>
                             @endif
                         </thead>
                         <tbody>
                             @forelse ($books as $book)
                                 <tr>
-                                    <td class="id">{{ $book->id }}</td>
-                                    <td>
+                                    <td class="id" style="text-align: center;">{{ $book->id }}</td>
+                                    <td style="text-align: center;">
                                         @if($book->cover_image)
                                             <img src="{{ $book->cover_image_url }}"
                                                 alt="{{ $book->name }}" style="width: 50px; height: 70px; object-fit: cover;"
@@ -187,10 +189,10 @@
                                             </div>
                                         @endif
                                     </td>
-                                    <td>{{ $book->name }}</td>
-                                    <td>{{ $book->isbn ?? 'N/A' }}</td>
-                                    <td>{{ $book->category->name }}</td>
-                                    <td style="white-space: nowrap;">
+                                    <td style="text-align: center;">{{ $book->name }}</td>
+                                    <td style="text-align: center;">{{ $book->isbn ?? 'N/A' }}</td>
+                                    <td style="text-align: center;">{{ $book->category->name }}</td>
+                                    <td style="white-space: nowrap; text-align: center;">
                                         @php
                                             $bookAuthors = $book->authors ?? collect();
                                             if ($bookAuthors->isEmpty() && $book->auther) {
@@ -209,13 +211,13 @@
                                             <span class="text-muted">N/A</span>
                                         @endif
                                     </td>
-                                    <td>{{ $book->publisher->name }}</td>
-                                    <td>
+                                    <td style="text-align: center;">{{ $book->publisher->name }}</td>
+                                    <td style="text-align: center;">
                                         <small>Total: {{ $book->total_quantity ?? 1 }}</small><br>
                                         <small>Available: {{ $book->available_quantity ?? 0 }}</small><br>
                                         <small>Issued: {{ $book->issued_quantity ?? 0 }}</small>
                                     </td>
-                                    <td>
+                                    <td style="text-align: center;">
                                         @if(($book->available_quantity ?? 0) > 0)
                                             <span class='badge badge-success'>Available</span>
                                         @else
@@ -223,10 +225,10 @@
                                         @endif
                                     </td>
                                     @if(auth()->user()->role == 'Admin')
-                                        <td class="edit">
+                                        <td class="edit" style="text-align: center;">
                                             <a href="{{ route('book.edit', $book) }}" class="btn btn-success">Edit</a>
                                         </td>
-                                        <td class="delete">
+                                        <td class="delete" style="text-align: center;">
                                             <form action="{{ route('book.destroy', $book) }}" method="post" class="form-hidden">
                                                 <button class="btn btn-danger delete-book">Delete</button>
                                                 @csrf
@@ -249,20 +251,64 @@
 
     <style>
         .suggestions-dropdown {
-            position: absolute;
-            background: white;
+            position: absolute !important;
+            background: white !important;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             max-height: 400px;
             overflow-y: auto;
-            z-index: 1050;
+            z-index: 999999 !important;
             width: 100%;
             min-width: 350px;
             max-width: 600px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
-            margin-top: 4px;
-            top: 100%;
-            left: 0;
+            margin-top: 4px !important;
+            top: 100% !important;
+            left: 0 !important;
+        }
+        .form-group[style*="position: relative"] {
+            position: relative !important;
+            z-index: 1;
+        }
+        /* Prevent parent containers from clipping dropdowns */
+        .card, .card-body, .row, .container, #admin-content, .col-md-3, .col-md-10, .col-md-12 {
+            overflow: visible !important;
+        }
+        /* Ensure table doesn't overlap dropdown */
+        .content-table,
+        #admin-content .content-table {
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: visible !important;
+        }
+        .content-table thead,
+        #admin-content .content-table thead {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        /* Ensure the row with table has lower z-index */
+        .row:has(.content-table) {
+            position: relative;
+            z-index: 1 !important;
+        }
+        /* Fix search button to stay within boundary */
+        button[type="submit"].btn-block {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .col-md-1 button[type="submit"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            box-sizing: border-box !important;
+        }
+        .col-md-1 {
+            overflow: hidden !important;
         }
         .suggestion-item {
             padding: 12px 18px;
@@ -412,192 +458,212 @@
     </style>
 
     <script>
-        const bookSearchInput = document.getElementById('book-search-input');
-        const bookSuggestionsDiv = document.getElementById('book-suggestions');
-        let suggestionTimeout = null;
-        const suggestionsUrl = '{{ route("book.suggestions") }}';
+        // Initialize search suggestions when DOM is ready
+        function initializeSearchSuggestions() {
+            const bookSearchInput = document.getElementById('book-search-input');
+            const bookSuggestionsDiv = document.getElementById('book-suggestions');
 
-        // Show suggestions on focus
-        bookSearchInput.addEventListener('focus', function() {
-            const searchTerm = this.value.trim();
-            if (searchTerm.length > 0) {
-                fetchSuggestions(searchTerm);
-            } else {
-                fetchSuggestions('');
-            }
-        });
-
-        // Fetch suggestions as user types - immediate response
-        bookSearchInput.addEventListener('input', function() {
-            const searchTerm = this.value.trim();
-
-            // Clear previous timeout
-            if (suggestionTimeout) {
-                clearTimeout(suggestionTimeout);
+            // Check if elements exist
+            if (!bookSearchInput || !bookSuggestionsDiv) {
+                console.error('Search input or suggestions div not found');
+                return;
             }
 
-            // If user just started typing (first character), show suggestions immediately
-            if (searchTerm.length === 1) {
-                fetchSuggestions(searchTerm);
-            } else if (searchTerm.length > 1) {
-                // For subsequent characters, use shorter debounce (150ms) for faster response
-                suggestionTimeout = setTimeout(function() {
+            let suggestionTimeout = null;
+            const suggestionsUrl = '{{ route("book.suggestions") }}';
+
+            // Show suggestions on focus
+            bookSearchInput.addEventListener('focus', function() {
+                const searchTerm = this.value.trim();
+                if (searchTerm.length > 0) {
                     fetchSuggestions(searchTerm);
-                }, 150);
-            } else {
-                // If input is cleared, show popular suggestions
-                fetchSuggestions('');
-            }
-        });
-
-        // Also trigger on keydown for immediate feedback
-        bookSearchInput.addEventListener('keydown', function(e) {
-            // Don't interfere with arrow keys, enter, escape
-            if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
-                return;
-            }
-
-            const searchTerm = this.value.trim();
-            // If user is typing a character, show suggestions immediately
-            if (searchTerm.length >= 1 && e.key.length === 1) {
-                clearTimeout(suggestionTimeout);
-                suggestionTimeout = setTimeout(function() {
-                    fetchSuggestions(searchTerm + e.key);
-                }, 100);
-            }
-        });
-
-        // Fetch suggestions from server
-        function fetchSuggestions(searchTerm) {
-            const url = suggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
-
-            fetch(url)
-                .then(response => response.json())
-                .then(suggestions => {
-                    if (suggestions && suggestions.length > 0) {
-                        displayBookSuggestions(suggestions);
-                    } else {
-                        bookSuggestionsDiv.style.display = 'none';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching suggestions:', error);
-                    bookSuggestionsDiv.style.display = 'none';
-                });
-        }
-
-        function displayBookSuggestions(suggestions) {
-            bookSuggestionsDiv.innerHTML = '';
-
-            if (!suggestions || suggestions.length === 0) {
-                bookSuggestionsDiv.style.display = 'none';
-                return;
-            }
-
-            // Group suggestions by type
-            const grouped = {};
-            suggestions.forEach(item => {
-                const type = item.type || 'other';
-                if (!grouped[type]) {
-                    grouped[type] = [];
+                } else {
+                    fetchSuggestions('');
                 }
-                grouped[type].push(item);
             });
 
-            // Type labels mapping
-            const typeLabels = {
-                'book': '📚 Books',
-                'author': '✍️ Authors',
-                'category': '📂 Categories',
-                'publisher': '🏢 Publishers',
-                'isbn': '🔢 ISBN'
-            };
+            // Fetch suggestions as user types - immediate response
+            bookSearchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
 
-            // Display grouped suggestions with headers
-            Object.keys(grouped).forEach(type => {
-                const items = grouped[type];
+                // Clear previous timeout
+                if (suggestionTimeout) {
+                    clearTimeout(suggestionTimeout);
+                }
 
-                // Add header for each type
-                const header = document.createElement('div');
-                header.className = 'suggestions-header';
-                header.textContent = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1);
-                bookSuggestionsDiv.appendChild(header);
+                // If user just started typing (first character), show suggestions immediately
+                if (searchTerm.length === 1) {
+                    fetchSuggestions(searchTerm);
+                } else if (searchTerm.length > 1) {
+                    // For subsequent characters, use shorter debounce (150ms) for faster response
+                    suggestionTimeout = setTimeout(function() {
+                        fetchSuggestions(searchTerm);
+                    }, 150);
+                } else {
+                    // If input is cleared, show popular suggestions
+                    fetchSuggestions('');
+                }
+            });
 
-                items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
+            // Also trigger on keydown for immediate feedback
+            bookSearchInput.addEventListener('keydown', function(e) {
+                // Don't interfere with arrow keys, enter, escape
+                if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+                    return;
+                }
 
-                    const icon = document.createElement('span');
-                    icon.className = 'suggestion-icon';
-                    icon.textContent = item.icon || '🔍';
+                const searchTerm = this.value.trim();
+                // If user is typing a character, show suggestions immediately
+                if (searchTerm.length >= 1 && e.key.length === 1) {
+                    clearTimeout(suggestionTimeout);
+                    suggestionTimeout = setTimeout(function() {
+                        fetchSuggestions(searchTerm + e.key);
+                    }, 100);
+                }
+            });
 
-                    const text = document.createElement('span');
-                    text.className = 'suggestion-text';
-                    text.textContent = item.text;
+            // Fetch suggestions from server
+            function fetchSuggestions(searchTerm) {
+                const url = suggestionsUrl + (searchTerm ? '?q=' + encodeURIComponent(searchTerm) : '');
 
-                    div.appendChild(icon);
-                    div.appendChild(text);
-
-                    div.addEventListener('click', function() {
-                        bookSearchInput.value = item.text;
-                        bookSearchInput.focus();
+                fetch(url)
+                    .then(response => response.json())
+                    .then(suggestions => {
+                        if (suggestions && suggestions.length > 0) {
+                            displayBookSuggestions(suggestions);
+                        } else {
+                            bookSuggestionsDiv.style.display = 'none';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching suggestions:', error);
                         bookSuggestionsDiv.style.display = 'none';
-                        // Don't auto-submit - let user review and click search button
                     });
+            }
 
-                    bookSuggestionsDiv.appendChild(div);
+            function displayBookSuggestions(suggestions) {
+                bookSuggestionsDiv.innerHTML = '';
+
+                if (!suggestions || suggestions.length === 0) {
+                    bookSuggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                // Group suggestions by type
+                const grouped = {};
+                suggestions.forEach(item => {
+                    const type = item.type || 'other';
+                    if (!grouped[type]) {
+                        grouped[type] = [];
+                    }
+                    grouped[type].push(item);
                 });
+
+                // Type labels mapping
+                const typeLabels = {
+                    'book': '📚 Books',
+                    'author': '✍️ Authors',
+                    'category': '📂 Categories',
+                    'publisher': '🏢 Publishers',
+                    'isbn': '🔢 ISBN'
+                };
+
+                // Display grouped suggestions with headers
+                Object.keys(grouped).forEach(type => {
+                    const items = grouped[type];
+
+                    // Add header for each type
+                    const header = document.createElement('div');
+                    header.className = 'suggestions-header';
+                    header.textContent = typeLabels[type] || type.charAt(0).toUpperCase() + type.slice(1);
+                    bookSuggestionsDiv.appendChild(header);
+
+                    items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+
+                        const icon = document.createElement('span');
+                        icon.className = 'suggestion-icon';
+                        icon.textContent = item.icon || '🔍';
+
+                        const text = document.createElement('span');
+                        text.className = 'suggestion-text';
+                        text.textContent = item.text;
+
+                        div.appendChild(icon);
+                        div.appendChild(text);
+
+                        div.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            bookSearchInput.value = item.text;
+                            bookSuggestionsDiv.style.display = 'none';
+                            // Submit the form to search for the selected item
+                            document.getElementById('book-search-form').submit();
+                        });
+
+                        bookSuggestionsDiv.appendChild(div);
+                    });
+                });
+
+                bookSuggestionsDiv.style.display = 'block';
+            }
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!bookSearchInput.contains(e.target) && !bookSuggestionsDiv.contains(e.target)) {
+                    bookSuggestionsDiv.style.display = 'none';
+                }
             });
 
-            bookSuggestionsDiv.style.display = 'block';
-        }
+            // Handle keyboard navigation
+            bookSearchInput.addEventListener('keydown', function(e) {
+                const visibleSuggestions = bookSuggestionsDiv.querySelectorAll('.suggestion-item');
+                const highlighted = bookSuggestionsDiv.querySelector('.suggestion-item.highlighted');
 
-        // Hide suggestions when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!bookSearchInput.contains(e.target) && !bookSuggestionsDiv.contains(e.target)) {
-                bookSuggestionsDiv.style.display = 'none';
-            }
-        });
-
-        // Handle keyboard navigation
-        bookSearchInput.addEventListener('keydown', function(e) {
-            const visibleSuggestions = bookSuggestionsDiv.querySelectorAll('.suggestion-item');
-            const highlighted = bookSuggestionsDiv.querySelector('.suggestion-item.highlighted');
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (highlighted) {
-                    highlighted.classList.remove('highlighted');
-                    const next = highlighted.nextElementSibling;
-                    if (next) {
-                        next.classList.add('highlighted');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (highlighted) {
+                        highlighted.classList.remove('highlighted');
+                        const next = highlighted.nextElementSibling;
+                        if (next) {
+                            next.classList.add('highlighted');
+                        } else if (visibleSuggestions.length > 0) {
+                            visibleSuggestions[0].classList.add('highlighted');
+                        }
                     } else if (visibleSuggestions.length > 0) {
                         visibleSuggestions[0].classList.add('highlighted');
                     }
-                } else if (visibleSuggestions.length > 0) {
-                    visibleSuggestions[0].classList.add('highlighted');
-                }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (highlighted) {
-                    highlighted.classList.remove('highlighted');
-                    const prev = highlighted.previousElementSibling;
-                    if (prev) {
-                        prev.classList.add('highlighted');
-                    }
-                }
-            } else if (e.key === 'Enter') {
-                if (highlighted) {
+                } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    highlighted.click();
-                } else {
-                    // Submit form on Enter if no suggestion is highlighted
-                    document.getElementById('book-search-form').submit();
+                    if (highlighted) {
+                        highlighted.classList.remove('highlighted');
+                        const prev = highlighted.previousElementSibling;
+                        if (prev) {
+                            prev.classList.add('highlighted');
+                        }
+                    }
+                } else if (e.key === 'Enter') {
+                    if (highlighted) {
+                        e.preventDefault();
+                        highlighted.click();
+                    } else {
+                        // Submit form on Enter if no suggestion is highlighted
+                        document.getElementById('book-search-form').submit();
+                    }
+                } else if (e.key === 'Escape') {
+                    bookSuggestionsDiv.style.display = 'none';
                 }
-            } else if (e.key === 'Escape') {
-                bookSuggestionsDiv.style.display = 'none';
-            }
-        });
+            });
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSearchSuggestions);
+        } else {
+            // DOM already loaded
+            initializeSearchSuggestions();
+        }
 
         // Handle filter removal
         document.addEventListener('DOMContentLoaded', function() {

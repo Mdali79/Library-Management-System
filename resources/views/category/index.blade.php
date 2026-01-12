@@ -29,20 +29,20 @@
                     <div class="message"></div>
                     <table class="content-table">
                         <thead>
-                            <th>S.No</th>
-                            <th>Category Name</th>
-                            <th>Edit</th>
-                            <th>Delete</th>
+                            <th style="text-align: center;">S.No</th>
+                            <th style="text-align: center;">Category Name</th>
+                            <th style="text-align: center;">Edit</th>
+                            <th style="text-align: center;">Delete</th>
                         </thead>
                         <tbody>
                             @forelse ($categories as $category)
                                 <tr>
-                                    <td>{{ $category->id }}</td>
-                                    <td>{{ $category->name }}</td>
-                                    <td class="edit">
+                                    <td style="text-align: center;">{{ $category->id }}</td>
+                                    <td style="text-align: center;">{{ $category->name }}</td>
+                                    <td class="edit" style="text-align: center;">
                                         <a href="{{ route('category.edit', $category) }}" class="btn btn-success">Edit</a>
                                     </td>
-                                    <td class="delete">
+                                    <td class="delete" style="text-align: center;">
                                         <form action="{{ route('category.destroy', $category) }}" method="post"
                                             class="form-hidden">
                                             <button class="btn btn-danger delete-author">Delete</button>

@@ -1,5 +1,12 @@
 @extends('layouts.app')
 @section('content')
+    <!-- Welcome Splash Screen -->
+    <div id="welcome-splash" class="splash-screen">
+        <div class="splash-content">
+            <img src="{{ asset('images/welcome_splash.png') }}" alt="Welcome to Library" class="splash-image">
+        </div>
+    </div>
+
     <div id="admin-content">
         <div class="container">
             <div class="row mb-4">
@@ -29,15 +36,15 @@
             @endif
 
             <!-- Dashboard Search Bar -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div class="row mb-4" style="position: relative; z-index: 10 !important; overflow: visible !important;">
+                <div class="col-md-12" style="overflow: visible !important;">
+                    <div class="card" style="border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: visible !important; position: relative; z-index: 10 !important;">
                         <div class="card-header" style="background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; border: none;">
                             <h5 style="margin: 0; font-weight: 600;">
                                 <i class="fas fa-search"></i> Quick Search
                             </h5>
                         </div>
-                        <div class="card-body" style="background: #ffffff;">
+                        <div class="card-body" style="background: #ffffff; overflow: visible !important; position: relative; z-index: 10 !important;">
                             <form method="GET" action="{{ route('books') }}" id="dashboard-search-form">
                                 <div class="row">
                                     <div class="col-md-10">
@@ -68,8 +75,8 @@
                 <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
-                                <i class="fas fa-book"></i>
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-book" style="color: #fbbf24;"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $books }}</h1>
                             <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">Total Books</h5>
@@ -80,8 +87,8 @@
                 <div class="col-md-3 mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
-                                <i class="fas fa-users"></i>
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-users" style="color: #10b981;"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $students }}</h1>
                             <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">Total Members</h5>
@@ -92,8 +99,8 @@
                 <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
-                                <i class="fas fa-hand-holding"></i>
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-hand-holding" style="color: #3b82f6;"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $issued_books }}</h1>
                             <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">{{ $role === 'Student' ? 'My Issued Books' : 'Issued Books' }}</h5>
@@ -103,8 +110,8 @@
                 <div class="{{ $role === 'Student' ? 'col-md-4' : 'col-md-3' }} mb-4">
                     <div class="card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none;">
                         <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.9;">
-                                <i class="fas fa-undo"></i>
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-rotate-left" style="color: #8b5cf6;"></i>
                             </div>
                             <h1 class="mb-2" style="font-size: 3rem; font-weight: 700;">{{ $returned_books }}</h1>
                             <h5 class="card-title" style="font-size: 0.9rem; opacity: 0.95;">{{ $role === 'Student' ? 'My Returned Books' : 'Returned Books' }}</h5>
@@ -117,47 +124,55 @@
             @if($role === 'Admin')
             <div class="row mb-4">
                 <div class="col-md-3 mb-4">
-                    <div class="card text-center" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none;">
-                        <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.9;">
-                                <i class="fas fa-exclamation-triangle"></i>
+                    <div class="card text-center" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: none; height: 100%; display: flex; flex-direction: column;">
+                        <div class="card-body" style="padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-dollar-sign" style="color: #dc2626;"></i>
                             </div>
-                            <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700;">{{ $pending_fines_count }}</h1>
-                            <h5 class="card-title" style="font-size: 0.85rem; opacity: 0.95;">Pending Fines</h5>
-                            <p class="mb-0" style="font-size: 1.1rem; font-weight: 600;">{{ number_format($pending_fines_amount, 2) }} tk</p>
+                            <div>
+                                <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $pending_fines_count }}</h1>
+                                <h5 class="card-title" style="font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">Pending Fines</h5>
+                                <p class="mb-0" style="font-size: 1.1rem; font-weight: 600; color: #1e293b;">{{ number_format($pending_fines_amount, 2) }} tk</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-4">
-                    <div class="card text-center" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; border: none;">
-                        <div class="card-body" style="padding: 2rem;">
-                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.9;">
-                                <i class="fas fa-user-edit"></i>
+                    <div class="card text-center" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); border: none; height: 100%; display: flex; flex-direction: column;">
+                        <div class="card-body" style="padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                            <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
+                                <i class="fas fa-feather" style="color: #0ea5e9;"></i>
                             </div>
-                            <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700;">{{ $authors }}</h1>
-                            <h5 class="card-title" style="font-size: 0.85rem; opacity: 0.95;">Authors</h5>
+                            <div>
+                                <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $authors }}</h1>
+                                <h5 class="card-title" style="font-size: 0.85rem; color: #64748b;">Authors</h5>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-4">
-                    <div class="card text-center" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border: none;">
-                        <div class="card-body" style="padding: 2rem;">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border: none; height: 100%; display: flex; flex-direction: column;">
+                        <div class="card-body" style="padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
                             <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
                                 <i class="fas fa-building" style="color: #7c3aed;"></i>
                             </div>
-                            <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $publishers }}</h1>
-                            <h5 class="card-title" style="font-size: 0.85rem; color: #64748b;">Publishers</h5>
+                            <div>
+                                <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $publishers }}</h1>
+                                <h5 class="card-title" style="font-size: 0.85rem; color: #64748b;">Publishers</h5>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3 mb-4">
-                    <div class="card text-center" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: none;">
-                        <div class="card-body" style="padding: 2rem;">
+                    <div class="card text-center" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border: none; height: 100%; display: flex; flex-direction: column;">
+                        <div class="card-body" style="padding: 2rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
                             <div style="font-size: 2.5rem; margin-bottom: 0.5rem; opacity: 0.8;">
                                 <i class="fas fa-tags" style="color: #f59e0b;"></i>
                             </div>
-                            <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $categories }}</h1>
-                            <h5 class="card-title" style="font-size: 0.85rem; color: #64748b;">Categories</h5>
+                            <div>
+                                <h1 class="mb-1" style="font-size: 2.5rem; font-weight: 700; color: #1e293b;">{{ $categories }}</h1>
+                                <h5 class="card-title" style="font-size: 0.85rem; color: #64748b;">Categories</h5>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -633,24 +648,82 @@
             }
         });
         });
+
+        // Welcome Splash Screen - Auto hide after 2.5 seconds
+        // Only show on successful login, not on page reload
+        (function() {
+            const splashScreen = document.getElementById('welcome-splash');
+            if (splashScreen) {
+                // Check if we should show splash (only on login success, not on page reload)
+                const shouldShowSplash = {{ isset($show_welcome_splash) && $show_welcome_splash ? 'true' : 'false' }};
+
+                if (shouldShowSplash) {
+                    // Wait for page to fully load
+                    window.addEventListener('load', function() {
+                        // Show splash screen immediately
+                        splashScreen.style.display = 'flex';
+
+                        // After 2.5 seconds, fade out and remove
+                        setTimeout(function() {
+                            splashScreen.classList.add('fade-out');
+
+                            // Remove from DOM after fade animation completes
+                            setTimeout(function() {
+                                splashScreen.classList.add('hidden');
+                                splashScreen.style.display = 'none';
+                            }, 500); // Match CSS transition duration
+                        }, 2500); // 2.5 seconds display time
+                    });
+                } else {
+                    // Hide splash screen if not showing
+                    splashScreen.style.display = 'none';
+                    splashScreen.classList.add('hidden');
+                }
+            }
+        })();
     </script>
 
     <style>
         .suggestions-dropdown {
-            position: absolute;
-            background: white;
+            position: absolute !important;
+            background: white !important;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             max-height: 400px;
             overflow-y: auto;
-            z-index: 1050;
+            z-index: 999999 !important;
             width: 100%;
             min-width: 400px;
             max-width: 700px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
-            margin-top: 4px;
-            top: 100%;
-            left: 0;
+            margin-top: 4px !important;
+            top: 100% !important;
+            left: 0 !important;
+        }
+        .form-group[style*="position: relative"] {
+            position: relative !important;
+            z-index: 1;
+        }
+        /* Prevent parent containers from clipping dropdowns */
+        .card, .card-body, .row, .container, #admin-content, .col-md-10, .col-md-12 {
+            overflow: visible !important;
+        }
+        /* Ensure table doesn't overlap dropdown */
+        .content-table,
+        #admin-content .content-table {
+            position: relative !important;
+            z-index: 1 !important;
+            overflow: visible !important;
+        }
+        .content-table thead,
+        #admin-content .content-table thead {
+            position: relative !important;
+            z-index: 1 !important;
+        }
+        /* Ensure the row with table has lower z-index */
+        .row:has(.content-table) {
+            position: relative;
+            z-index: 1 !important;
         }
         .suggestion-item {
             padding: 12px 18px;
@@ -719,6 +792,60 @@
         }
         .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
             background: #555;
+        }
+
+        /* Welcome Splash Screen Styles */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .splash-screen.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .splash-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .splash-image {
+            max-width: 90%;
+            max-height: 90%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Hide splash screen when removed */
+        .splash-screen.hidden {
+            display: none;
         }
     </style>
 @endsection

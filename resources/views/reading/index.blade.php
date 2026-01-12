@@ -21,13 +21,13 @@
                                 <div class="row">
                                     <div class="col-md-10">
                                         <div class="form-group">
-                                            <input type="text" name="search" class="form-control" 
-                                                value="{{ request('search') }}" 
+                                            <input type="text" name="search" class="form-control"
+                                                value="{{ request('search') }}"
                                                 placeholder="Search by book name, author, or ISBN...">
                                         </div>
                                     </div>
                                     <div class="col-md-2">
-                                        <button type="submit" class="btn btn-danger btn-block">
+                                        <button type="submit" class="btn btn-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); white-space: nowrap; overflow: visible;">
                                             <i class="fas fa-search"></i> Search
                                         </button>
                                     </div>
@@ -60,8 +60,8 @@
                                     <!-- Book Cover -->
                                     <div class="text-center mb-3">
                                         @if($book->cover_image)
-                                            <img src="{{ $book->cover_image_url }}" 
-                                                alt="{{ $book->name }}" 
+                                            <img src="{{ $book->cover_image_url }}"
+                                                alt="{{ $book->name }}"
                                                 style="max-width: 150px; max-height: 200px; object-fit: cover; border-radius: 4px;">
                                         @else
                                             <div style="width: 150px; height: 200px; background: #f0f0f0; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px;">
@@ -77,7 +77,7 @@
 
                                     <!-- Author -->
                                     <p class="text-muted small mb-2">
-                                        <i class="fas fa-user"></i> 
+                                        <i class="fas fa-user"></i>
                                         @php
                                             $allAuthors = $book->authors ?? collect();
                                             if ($allAuthors->isEmpty() && $book->auther) {
@@ -101,7 +101,7 @@
                                     </p>
 
                                     <!-- Read Online Button -->
-                                    <a href="{{ route('reading.show', $book->id) }}" class="btn btn-danger btn-block">
+                                    <a href="{{ route('reading.show', $book->id) }}" class="btn btn-block" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                                         <i class="fas fa-book-reader"></i> Read Online
                                     </a>
                                 </div>
@@ -118,7 +118,7 @@
                 </div>
             @else
                 <div class="alert alert-info text-center">
-                    <i class="fas fa-info-circle"></i> 
+                    <i class="fas fa-info-circle"></i>
                     @if(request('search'))
                         No books found matching your search. <a href="{{ route('reading.index') }}">View all books</a>
                     @else
