@@ -30,12 +30,14 @@ class UserObserver
                 }
             }
         }
-        
+
         // If no clear caller found, use the first non-observer entry
         if (empty($caller) && !empty($fullCallStack)) {
             foreach ($fullCallStack as $stackCaller) {
-                if (strpos($stackCaller, 'UserObserver') === false && 
-                    strpos($stackCaller, 'Eloquent') === false) {
+                if (
+                    strpos($stackCaller, 'UserObserver') === false &&
+                    strpos($stackCaller, 'Eloquent') === false
+                ) {
                     $caller = $stackCaller;
                     break;
                 }
@@ -68,8 +70,10 @@ class UserObserver
         foreach ($backtrace as $trace) {
             if (isset($trace['class']) && isset($trace['function'])) {
                 $traceCaller = $trace['class'] . '::' . $trace['function'];
-                if (strpos($traceCaller, 'UserRegistrationController') !== false && 
-                    strpos($traceCaller, 'approve') !== false) {
+                if (
+                    strpos($traceCaller, 'UserRegistrationController') !== false &&
+                    strpos($traceCaller, 'approve') !== false
+                ) {
                     $isFromAdminApproval = true;
                     break;
                 }

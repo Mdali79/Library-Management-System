@@ -37,7 +37,7 @@ Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, '
 
 // OTP Verification routes
 Route::get('/verify-otp', [App\Http\Controllers\Auth\RegisterController::class, 'showOtpVerification'])->name('verify.otp');
-Route::post('/verify-otp', [App\Http\Controllers\Auth\RegisterController::class, 'verifyOtp'])->name('verify.otp');
+Route::post('/verify-otp', [App\Http\Controllers\Auth\RegisterController::class, 'verifyOtp'])->name('verify.otp.post');
 Route::post('/resend-otp', [App\Http\Controllers\Auth\RegisterController::class, 'resendOtp'])->name('resend.otp');
 
 // Old verification route (kept for backward compatibility)

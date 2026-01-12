@@ -13,7 +13,7 @@
                             <i class="fas fa-arrow-left"></i> Back to Registration
                         </a>
                     </div>
-                    <form class="yourform" action="{{ route('verify.otp') }}" method="post" id="otpForm">
+                    <form class="yourform" action="{{ route('verify.otp.post') }}" method="post" id="otpForm">
                         @csrf
                         <h3 class="heading">
                             <i class="fas fa-envelope"></i> Verify Your Email
