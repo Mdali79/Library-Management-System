@@ -3,37 +3,10 @@
 
     <div id="wrapper-admin">
         <div class="container">
-            <div class="row align-items-center" style="min-height: 80vh;">
-                <!-- Library Image Section -->
-                <div class="col-md-6 d-none d-md-block">
-                    <div class="text-center" style="padding: 2rem;">
-                        <div style="position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); min-height: 500px; background: linear-gradient(135deg, #2563eb, #7c3aed);">
-                            @php
-                                $libraryImage = file_exists(public_path('images/library-img.png')) ? asset('images/library-img.png') : asset('images/library.png');
-                            @endphp
-                            <img src="{{ $libraryImage }}" alt="Library"
-                                style="width: 100%; height: 100%; object-fit: cover; display: block; filter: blur(3px) brightness(0.7); position: absolute; top: 0; left: 0;">
-                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(37, 99, 235, 0.75), rgba(124, 58, 237, 0.75)); display: flex; align-items: center; justify-content: center; z-index: 1;">
-                                <div class="text-center" style="color: white; padding: 2rem; z-index: 2;">
-                                    <div style="font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.9;">
-                                        <i class="fas fa-book-open"></i>
-                                    </div>
-                                    <h2 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
-                                        Welcome to Library
-                                    </h2>
-                                    <p style="font-size: 1.3rem; opacity: 0.95; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); line-height: 1.6;">
-                                        Discover, Learn, and Explore<br>
-                                        <span style="font-size: 1rem; opacity: 0.85;">Your Gateway to Knowledge</span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Login Form Section -->
-                <div class="col-md-6">
-                    <div class="logo border border-danger" style="margin-bottom: 1.5rem;">
-                        <img src="{{ asset('images/library.png') }}" alt="">
+            <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+                <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+                    <div class="logo" style="text-align: center; margin-bottom: 1.5rem;">
+                        <img src="{{ asset('images/library.png') }}" alt="" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
                     </div>
                     <form class="yourform" action="{{ route('login') }}" method="post">
                         @csrf
