@@ -19,14 +19,14 @@
     <div id="header">
         <!-- HEADER -->
         <div class="container">
-            <div class="row">
-                <div class="offset-md-4 col-md-4">
-                    <div class="logo">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="logo" style="text-align: left; display: flex; align-items: center; height: 100%;">
                         <a href="{{ route('dashboard') }}"><img src="{{ asset('images/library.png') }}"></a>
                     </div>
                 </div>
-                <div class="offset-md-2 col-md-2">
-                    <div class="dropdown" style="position: relative;">
+                <div class="offset-md-4 col-md-4">
+                    <div class="dropdown" style="position: relative; display: flex; align-items: center; justify-content: flex-end; height: 100%;">
                         <button class="btn btn-secondary dropdown-toggle d-flex align-items-center" type="button" id="dropdownMenuButton"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="gap: 10px; padding: 0.5rem 1rem; cursor: pointer; user-select: none; pointer-events: auto; position: relative; z-index: 1001;">
                             @php
@@ -38,13 +38,13 @@
                                     style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
                             @else
                                 <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
-                                    <i class="fas fa-user" style="color: white; font-size: 1rem;"></i>
+                                    <i class="fas fa-user" style="color: white; font-size: 1rem; margin: 0; padding: 0; line-height: 1;"></i>
                                 </div>
                             @endif
                             <div class="d-flex flex-column align-items-start" style="line-height: 1.2; flex: 1; min-width: 0;">
                                 <span style="font-weight: 600; font-size: 0.95rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">{{ $user->name }}</span>
-                                <span class="badge badge-{{ $user->role === 'Admin' ? 'danger' : ($user->role === 'Student' ? 'success' : 'primary') }}" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-top: 2px; font-weight: 500;">
-                                    <i class="fas fa-{{ $user->role === 'Admin' ? 'user-shield' : ($user->role === 'Student' ? 'user-graduate' : 'user') }}"></i> {{ $user->role }}
+                                <span class="badge badge-{{ $user->role === 'Admin' ? 'danger' : ($user->role === 'Student' ? 'success' : 'primary') }}" style="font-size: 0.65rem; padding: 0.15rem 0.5rem; margin-top: 2px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-{{ $user->role === 'Admin' ? 'user-shield' : ($user->role === 'Student' ? 'user-graduate' : 'user') }}" style="margin: 0; padding: 0; line-height: 1;"></i> {{ $user->role }}
                                 </span>
                             </div>
                         </button>
@@ -136,6 +136,28 @@
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        // Set menu bar top position based on header height
+        (function() {
+            function setMenuBarPosition() {
+                const header = document.getElementById('header');
+                const menubar = document.getElementById('menubar');
+                if (header && menubar) {
+                    const headerHeight = header.offsetHeight;
+                    document.documentElement.style.setProperty('--header-height', headerHeight + 'px');
+                    menubar.style.top = headerHeight + 'px';
+                }
+            }
+            // Set on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setMenuBarPosition);
+            } else {
+                setMenuBarPosition();
+            }
+            // Update on resize
+            window.addEventListener('resize', setMenuBarPosition);
+        })();
+    </script>
     <style>
         /* Global styles for all search suggestion dropdowns across the project */
         .suggestions-dropdown {

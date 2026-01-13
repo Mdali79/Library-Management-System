@@ -675,7 +675,7 @@
                         // Show splash screen immediately
                         splashScreen.style.display = 'flex';
 
-                        // After 2.5 seconds, fade out and remove
+                        // After 1 second, fade out and remove
                         setTimeout(function() {
                             splashScreen.classList.add('fade-out');
 
@@ -684,7 +684,7 @@
                                 splashScreen.classList.add('hidden');
                                 splashScreen.style.display = 'none';
                             }, 500); // Match CSS transition duration
-                        }, 2500); // 2.5 seconds display time
+                        }, 1000); // 1 second display time
                     });
                 } else {
                     // Hide splash screen if not showing
@@ -836,11 +836,9 @@
         }
 
         .splash-image {
-            max-width: 90%;
-            max-height: 90%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             animation: fadeIn 0.3s ease-in;
         }
 

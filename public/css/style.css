@@ -93,8 +93,22 @@ ul {
     padding: 1rem 0;
 }
 
+#header .container {
+    display: flex;
+    align-items: center;
+}
+
+#header .row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
 .logo {
     text-align: center;
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 .logo img {
@@ -105,7 +119,11 @@ ul {
 
 .dropdown {
     text-align: right;
-    padding: 1rem 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
 }
 
 .dropdown button {
@@ -161,7 +179,7 @@ ul {
     box-shadow: var(--shadow-sm);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
-    top: 80px;
+    top: 80px; /* Default fallback, will be updated by JavaScript */
     z-index: 999;
 }
 
@@ -1298,6 +1316,15 @@ a:hover {
     cursor: pointer;
 }
 
+.chatbot-float-btn i {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .chatbot-float-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
@@ -1311,6 +1338,12 @@ a:hover {
 
 .chatbot-float-btn i {
     animation: pulse 2s infinite;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @keyframes pulse {
