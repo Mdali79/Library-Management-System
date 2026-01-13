@@ -244,8 +244,41 @@ class RegisterController extends Controller
                 ->withInput();
         }
 
-        // Redirect to OTP verification page
-        return redirect()->route('verify.otp')->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
+        // Redirect to OTP verification page - ensure it works for both Student and Admin
+        try {
+            $redirectUrl = route('verify.otp');
+            \Log::info('Redirecting to OTP verification page', [
+                'email' => $request->email,
+                'role' => $request->role,
+                'url' => $redirectUrl,
+                'session_id' => session()->getId(),
+                'has_registration_data' => session()->has('registration_data'),
+                'has_otp_code' => session()->has('otp_code')
+            ]);
+
+            // Double-check session before redirect
+            if (!session()->has('registration_data') || !session()->has('otp_code')) {
+                \Log::error('Session data missing right before redirect', [
+                    'email' => $request->email,
+                    'role' => $request->role,
+                    'session_id' => session()->getId()
+                ]);
+                return redirect()->back()
+                    ->withErrors(['error' => 'Session error. Please try registering again.'])
+                    ->withInput();
+            }
+
+            return redirect($redirectUrl)->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
+        } catch (\Exception $e) {
+            \Log::error('Failed to redirect to OTP verification page', [
+                'email' => $request->email,
+                'role' => $request->role,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Fallback: redirect using URL directly
+            return redirect('/verify-otp')->with('success', 'A verification code has been sent to your email address. Please check your inbox and enter the code below.');
+        }
     }
 
     /**
@@ -253,13 +286,31 @@ class RegisterController extends Controller
      */
     public function showOtpVerification()
     {
+        \Log::info('OTP verification page accessed', [
+            'has_registration_data' => session()->has('registration_data'),
+            'has_otp_code' => session()->has('otp_code'),
+            'session_id' => session()->getId(),
+            'session_driver' => config('session.driver'),
+            'all_session_keys' => array_keys(session()->all()),
+            'referer' => request()->header('referer'),
+            'url' => request()->fullUrl()
+        ]);
+
         // Check if registration data exists in session
         if (!session()->has('registration_data') || !session()->has('otp_code')) {
-            \Log::warning('OTP verification page accessed without session data', [
+            \Log::warning('OTP verification page accessed without session data - redirecting to register', [
                 'has_registration_data' => session()->has('registration_data'),
                 'has_otp_code' => session()->has('otp_code'),
-                'session_id' => session()->getId()
+                'session_id' => session()->getId(),
+                'session_driver' => config('session.driver'),
+                'session_lifetime' => config('session.lifetime'),
+                'session_secure' => config('session.secure'),
+                'session_same_site' => config('session.same_site'),
+                'session_domain' => config('session.domain'),
+                'all_session_data' => session()->all(),
+                'referer' => request()->header('referer')
             ]);
+            // DO NOT redirect to login with success message - redirect to register with error
             return redirect()->route('register')
                 ->withErrors(['error' => 'Your registration session has expired or was not found. Please register again. If this problem persists, check your session configuration.']);
         }

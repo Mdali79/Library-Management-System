@@ -16,6 +16,15 @@ class ProfileController extends Controller
     public function show()
     {
         $user = Auth::user();
+        // Refresh user to ensure we have the latest data
+        $user->refresh();
+
+        \Log::info('Profile show page accessed', [
+            'user_id' => $user->id,
+            'has_profile_picture' => !empty($user->profile_picture),
+            'profile_picture_path' => $user->profile_picture ?? 'null'
+        ]);
+
         return view('profile.show', compact('user'));
     }
 
@@ -80,21 +89,57 @@ class ProfileController extends Controller
         }
         // Handle profile picture upload (only if not removing)
         elseif ($request->hasFile('profile_picture')) {
+            \Log::info('Profile picture upload detected', [
+                'user_id' => $user->id,
+                'file_name' => $request->file('profile_picture')->getClientOriginalName(),
+                'file_size' => $request->file('profile_picture')->getSize(),
+                'file_type' => $request->file('profile_picture')->getMimeType()
+            ]);
+
             // Delete old profile picture if exists
             if ($user->profile_picture && Storage::exists('public/' . $user->profile_picture)) {
                 Storage::delete('public/' . $user->profile_picture);
+                \Log::info('Old profile picture deleted', ['path' => $user->profile_picture]);
             }
 
             $image = $request->file('profile_picture');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-            $image->storeAs('public/profile_pictures', $imageName);
-            $data['profile_picture'] = 'profile_pictures/' . $imageName;
+            $imageName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $image->getClientOriginalName());
+            $storedPath = $image->storeAs('public/profile_pictures', $imageName);
+
+            if ($storedPath) {
+                $data['profile_picture'] = 'profile_pictures/' . $imageName;
+                \Log::info('Profile picture stored successfully', [
+                    'stored_path' => $storedPath,
+                    'profile_picture' => $data['profile_picture']
+                ]);
+            } else {
+                \Log::error('Failed to store profile picture');
+                return redirect()->back()
+                    ->withErrors(['profile_picture' => 'Failed to upload profile picture. Please try again.'])
+                    ->withInput();
+            }
         }
 
         $user->update($data);
 
         // Refresh the user model to get updated attributes
         $user->refresh();
+
+        \Log::info('Profile updated', [
+            'user_id' => $user->id,
+            'has_profile_picture' => !empty($user->profile_picture),
+            'profile_picture_path' => $user->profile_picture
+        ]);
+
+        // Verify the image file exists
+        if (!empty($user->profile_picture)) {
+            $imageExists = Storage::disk('public')->exists($user->profile_picture);
+            \Log::info('Profile picture verification', [
+                'path' => $user->profile_picture,
+                'exists' => $imageExists,
+                'full_path' => Storage::disk('public')->path($user->profile_picture)
+            ]);
+        }
 
         // Update student record if user is a Student
         if ($user->role === 'Student') {

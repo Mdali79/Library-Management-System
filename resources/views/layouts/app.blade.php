@@ -34,9 +34,8 @@
                             @endphp
                             @if($user->profile_picture)
                                 @php
-                                    $headerProfileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture)
-                                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture)
-                                        : asset('storage/' . $user->profile_picture);
+                                    // Use asset() which respects the current request host
+                                    $headerProfileImageUrl = asset('storage/' . $user->profile_picture);
                                     // Add cache buster to ensure fresh image after update
                                     $headerProfileImageUrl .= '?v=' . time();
                                 @endphp

@@ -31,31 +31,32 @@
                         @csrf
                         <div class="form-group text-center mb-4">
                             <label>Profile Picture</label>
-                            <div class="mb-3">
+                            <div class="mb-3" style="position: relative;">
                                 @php
                                     $hasProfilePicture = !empty($user->profile_picture) && $user->profile_picture !== null && $user->profile_picture !== '';
                                 @endphp
                                 <input type="file" class="form-control @error('profile_picture') is-invalid @enderror"
                                     name="profile_picture" id="profile_picture" accept="image/*" style="display: none;">
-                                <label for="profile_picture" style="cursor: pointer; display: inline-block; margin: 0;">
+                                <label for="profile_picture" style="cursor: pointer; display: inline-block; margin: 0; position: relative; z-index: 1;">
                                     @if($hasProfilePicture)
                                         @php
-                                            $profileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture)
-                                                ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture)
-                                                : asset('storage/' . $user->profile_picture);
+                                            // Use asset() which respects the current request host
+                                            $profileImageUrl = asset('storage/' . $user->profile_picture);
                                             // Add cache buster to ensure fresh image after update
                                             $profileImageUrl .= '?v=' . time();
                                         @endphp
-                                        <img src="{{ $profileImageUrl }}"
-                                            alt="{{ $user->name }}"
-                                            id="profile-preview"
-                                            class="profile-image-clickable"
-                                            style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease; display: block; margin: 0 auto;"
-                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                        <div id="profile-preview-fallback" class="profile-image-clickable" style="display: none; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
-                                            <span style="font-size: 4rem; color: white;">
-                                                <i class="fas fa-user"></i>
-                                            </span>
+                                        <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+                                            <img src="{{ $profileImageUrl }}"
+                                                alt="{{ $user->name }}"
+                                                id="profile-preview"
+                                                class="profile-image-clickable"
+                                                style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease; display: block; position: relative; z-index: 1;"
+                                                onerror="this.onerror=null; this.style.display='none'; var fallback = document.getElementById('profile-preview-fallback'); if(fallback) fallback.style.display='flex';">
+                                            <div id="profile-preview-fallback" class="profile-image-clickable" style="display: none; position: absolute; top: 0; left: 0; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); align-items: center; justify-content: center; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease; z-index: 2;">
+                                                <span style="font-size: 4rem; color: white;">
+                                                    <i class="fas fa-user"></i>
+                                                </span>
+                                            </div>
                                         </div>
                                     @else
                                         <div id="profile-preview" class="profile-image-clickable"
@@ -246,6 +247,34 @@
                 console.log('Profile input found:', profileInput);
                 console.log('Profile preview found:', profilePreview);
 
+                // Direct click handler for label (backup method)
+                const label = profileInput ? profileInput.nextElementSibling : null;
+                if (label && label.tagName === 'LABEL') {
+                    label.addEventListener('click', function(e) {
+                        console.log('Label clicked');
+                        if (profileInput) {
+                            profileInput.click();
+                        }
+                    });
+                }
+
+                // Also add click handler directly to preview elements as backup
+                function triggerFileSelect(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Preview clicked, triggering file input');
+                    if (profileInput) {
+                        profileInput.click();
+                    }
+                }
+
+                if (profilePreview) {
+                    profilePreview.addEventListener('click', triggerFileSelect);
+                }
+                if (profilePreviewFallback) {
+                    profilePreviewFallback.addEventListener('click', triggerFileSelect);
+                }
+
                 // Function to handle hover effects
                 function handleHover(e) {
                     const target = e.currentTarget;
@@ -353,20 +382,24 @@
                             img.addEventListener('mouseenter', handleHover);
                             img.addEventListener('mouseleave', handleHover);
 
-                            // Get the label parent to replace within it
-                            const label = preview.closest('label');
-                            if (label) {
-                                // Replace preview within label
-                                label.replaceChild(img, preview);
-                                console.log('Replaced div with img inside label');
-                            } else {
-                                // Fallback: replace in parent
-                                preview.parentNode.replaceChild(img, preview);
-                                console.log('Replaced div with img in parent');
-                            }
+                                // Get the label parent to replace within it
+                                const label = preview.closest('label');
+                                if (label) {
+                                    // Replace preview within label
+                                    label.replaceChild(img, preview);
+                                    console.log('Replaced div with img inside label');
+                                    // Reattach click handler to new image
+                                    img.addEventListener('click', triggerFileSelect);
+                                } else {
+                                    // Fallback: replace in parent
+                                    preview.parentNode.replaceChild(img, preview);
+                                    console.log('Replaced div with img in parent');
+                                    // Reattach click handler to new image
+                                    img.addEventListener('click', triggerFileSelect);
+                                }
 
-                            // Update the preview reference for future use
-                            window.currentProfilePreview = img;
+                                // Update the preview reference for future use
+                                window.currentProfilePreview = img;
                         }
 
                         // Show remove button section when new image is selected
