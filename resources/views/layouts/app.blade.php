@@ -137,25 +137,63 @@
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
     <script>
-        // Set menu bar top position based on header height
+        // Ensure menu bar stays sticky below header while scrolling
         (function() {
-            function setMenuBarPosition() {
+            function setMenuBarSticky() {
                 const header = document.getElementById('header');
                 const menubar = document.getElementById('menubar');
-                if (header && menubar) {
-                    const headerHeight = header.offsetHeight;
-                    document.documentElement.style.setProperty('--header-height', headerHeight + 'px');
-                    menubar.style.top = headerHeight + 'px';
+                
+                if (!header || !menubar) {
+                    // Retry if elements not found
+                    setTimeout(setMenuBarSticky, 100);
+                    return;
                 }
+                
+                // Get header height
+                const headerHeight = header.offsetHeight || header.getBoundingClientRect().height;
+                
+                // Set header sticky
+                header.style.cssText += 'position: sticky !important; top: 0 !important; z-index: 1000 !important; width: 100% !important;';
+                
+                // Set menu bar sticky below header
+                menubar.style.cssText += 'position: sticky !important; top: ' + headerHeight + 'px !important; z-index: 999 !important; width: 100% !important;';
+                
+                // Store header height in CSS variable for future use
+                document.documentElement.style.setProperty('--header-height', headerHeight + 'px');
             }
-            // Set on load
+            
+            // Run immediately
+            setMenuBarSticky();
+            
+            // Run on DOM ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', setMenuBarPosition);
-            } else {
-                setMenuBarPosition();
+                document.addEventListener('DOMContentLoaded', setMenuBarSticky);
             }
-            // Update on resize
-            window.addEventListener('resize', setMenuBarPosition);
+            
+            // Run on window load
+            window.addEventListener('load', setMenuBarSticky);
+            
+            // Run on scroll (with throttling)
+            let scrollTimer = null;
+            window.addEventListener('scroll', function() {
+                if (scrollTimer === null) {
+                    scrollTimer = setTimeout(function() {
+                        setMenuBarSticky();
+                        scrollTimer = null;
+                    }, 50);
+                }
+            }, { passive: true });
+            
+            // Run on resize
+            let resizeTimer = null;
+            window.addEventListener('resize', function() {
+                if (resizeTimer === null) {
+                    resizeTimer = setTimeout(function() {
+                        setMenuBarSticky();
+                        resizeTimer = null;
+                    }, 100);
+                }
+            });
         })();
     </script>
     <style>

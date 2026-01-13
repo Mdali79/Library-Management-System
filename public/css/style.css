@@ -87,10 +87,11 @@ ul {
         var(--secondary-color) 100%
     );
     box-shadow: var(--shadow-md);
-    position: sticky;
-    top: 0;
+    position: sticky !important;
+    top: 0 !important;
     z-index: 1000;
     padding: 1rem 0;
+    width: 100%;
 }
 
 #header .container {
@@ -179,8 +180,10 @@ ul {
     box-shadow: var(--shadow-sm);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
-    top: 80px; /* Default fallback, will be updated by JavaScript */
+    top: 80px; /* Default, will be updated by JavaScript */
     z-index: 999;
+    width: 100%;
+    margin-top: 0;
 }
 
 .menu {
