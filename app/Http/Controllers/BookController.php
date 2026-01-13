@@ -291,6 +291,9 @@ class BookController extends Controller
 
         $book->update($data);
 
+        // Refresh the book model to get updated attributes
+        $book->refresh();
+
         // Sync authors to pivot table (no roles needed)
         $authorIds = [];
         foreach ($authorsData as $author) {

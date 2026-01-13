@@ -180,7 +180,7 @@
                                     <td class="id" style="text-align: center;">{{ $book->id }}</td>
                                     <td style="text-align: center;">
                                         @if($book->cover_image)
-                                            <img src="{{ $book->cover_image_url }}"
+                                            <img src="{{ $book->cover_image_url }}?v={{ time() }}"
                                                 alt="{{ $book->name }}" style="width: 50px; height: 70px; object-fit: cover;"
                                                 onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'50\' height=\'70\'%3E%3Crect width=\'50\' height=\'70\' fill=\'%23ddd\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-size=\'10\'%3ENo Image%3C/text%3E%3C/svg%3E';">
                                         @else

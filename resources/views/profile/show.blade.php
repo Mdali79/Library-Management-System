@@ -32,11 +32,19 @@
                                 <div class="col-md-4 text-center mb-4">
                                     <a href="{{ route('profile.edit') }}" style="text-decoration: none; display: inline-block;">
                                         @if($user->profile_picture)
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
+                                            @php
+                                                $profileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture)
+                                                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture)
+                                                    : asset('storage/' . $user->profile_picture);
+                                                // Add cache buster to ensure fresh image after update
+                                                $profileImageUrl .= '?v=' . time();
+                                            @endphp
+                                            <img src="{{ $profileImageUrl }}"
                                                 alt="{{ $user->name }}"
                                                 style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
                                                 onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';"
-                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';"
+                                                onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                         @else
                                             <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
                                                 onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)';"

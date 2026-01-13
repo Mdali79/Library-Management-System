@@ -93,6 +93,9 @@ class ProfileController extends Controller
 
         $user->update($data);
 
+        // Refresh the user model to get updated attributes
+        $user->refresh();
+
         // Update student record if user is a Student
         if ($user->role === 'Student') {
             $studentRecord = student::where('user_id', $user->id)->first();

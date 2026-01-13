@@ -42,7 +42,7 @@
                                     <select class="form-control @error('category_id') is-invalid @enderror" name="category_id" required>
                                         <option value="">Select Category</option>
                                         @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}" 
+                                            <option value="{{ $category->id }}"
                                                 {{ old('category_id', $book->category_id) == $category->id ? 'selected' : '' }}>
                                                 {{ $category->name }}
                                             </option>
@@ -79,7 +79,7 @@
                                                                     <select class="form-control author-select" name="authors[{{ $index }}][id]" required style="overflow: visible !important; text-overflow: clip !important; white-space: normal !important; padding-right: 4.5rem !important;">
                                                                         <option value="">Select Author</option>
                                                                         @foreach ($authors as $author)
-                                                                            <option value="{{ $author->id }}" 
+                                                                            <option value="{{ $author->id }}"
                                                                                 {{ (isset($authorData['id']) && $authorData['id'] == $author->id) ? 'selected' : '' }}>
                                                                                 {{ $author->name }}
                                                                             </option>
@@ -144,7 +144,7 @@
                                     <select class="form-control @error('publisher_id') is-invalid @enderror" name="publisher_id" required>
                                         <option value="">Select Publisher</option>
                                         @foreach ($publishers as $publisher)
-                                            <option value="{{ $publisher->id }}" 
+                                            <option value="{{ $publisher->id }}"
                                                 {{ old('publisher_id', $book->publisher_id) == $publisher->id ? 'selected' : '' }}>
                                                 {{ $publisher->name }}
                                             </option>
@@ -175,7 +175,7 @@
                                 <div class="form-group">
                                     <label>Publication Year</label>
                                     <input type="number" class="form-control @error('publication_year') is-invalid @enderror"
-                                        placeholder="e.g., 2024" name="publication_year" 
+                                        placeholder="e.g., 2024" name="publication_year"
                                         value="{{ old('publication_year', $book->publication_year) }}" min="1000" max="{{ date('Y') + 1 }}">
                                     @error('publication_year')
                                         <div class="alert alert-danger" role="alert">
@@ -188,10 +188,10 @@
                                 <div class="form-group">
                                     <label>Total Quantity <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('total_quantity') is-invalid @enderror"
-                                        placeholder="Total copies" name="total_quantity" 
+                                        placeholder="Total copies" name="total_quantity"
                                         value="{{ old('total_quantity', $book->total_quantity ?? 1) }}" min="1" required>
                                     <small class="form-text text-muted">
-                                        Available: {{ $book->available_quantity ?? 0 }}, 
+                                        Available: {{ $book->available_quantity ?? 0 }},
                                         Issued: {{ $book->issued_quantity ?? 0 }}
                                     </small>
                                     @error('total_quantity')
@@ -204,7 +204,7 @@
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" 
+                            <textarea class="form-control @error('description') is-invalid @enderror"
                                 name="description" rows="4" placeholder="Book description...">{{ old('description', $book->description) }}</textarea>
                             @error('description')
                                 <div class="alert alert-danger" role="alert">
@@ -216,12 +216,13 @@
                             <label>Book Cover Image</label>
                             @if($book->cover_image)
                                 <div class="mb-2">
-                                    <img src="{{ $book->cover_image_url }}" 
-                                        alt="{{ $book->name }}" style="max-width: 200px; max-height: 300px;">
+                                    <img src="{{ $book->cover_image_url }}?v={{ time() }}"
+                                        alt="{{ $book->name }}" style="max-width: 200px; max-height: 300px; border: 1px solid #ddd; border-radius: 4px;"
+                                        onerror="this.onerror=null; this.src='{{ asset('images/default-book-cover.png') }}';">
                                     <p class="text-muted">Current cover image</p>
                                 </div>
                             @endif
-                            <input type="file" class="form-control @error('cover_image') is-invalid @enderror" 
+                            <input type="file" class="form-control @error('cover_image') is-invalid @enderror"
                                 name="cover_image" accept="image/*">
                             <small class="form-text text-muted">Leave empty to keep current image. Max size: 2MB</small>
                             @error('cover_image')
@@ -235,17 +236,17 @@
                             @if($book->pdf_file)
                                 <div class="mb-2">
                                     <p class="text-muted">
-                                        <i class="fas fa-file-pdf text-danger"></i> Current PDF: 
+                                        <i class="fas fa-file-pdf text-danger"></i> Current PDF:
                                         <a href="{{ route('reading.show', $book->id) }}" target="_blank" class="text-primary">
                                             View PDF
                                         </a>
                                     </p>
                                 </div>
                             @endif
-                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror" 
+                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror"
                                 name="pdf_file" accept=".pdf,application/pdf">
                             <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> Leave empty to keep current PDF. Max size: 50MB. 
+                                <i class="fas fa-info-circle"></i> Leave empty to keep current PDF. Max size: 50MB.
                                 Only PDF files allowed. Students will be able to read the first few chapters online.
                             </small>
                             @error('pdf_file')
@@ -256,7 +257,7 @@
                         </div>
                         <div class="form-group">
                             <label>Preview Pages</label>
-                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror" 
+                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror"
                                 name="preview_pages" value="{{ old('preview_pages', $book->preview_pages ?? 50) }}" min="1" max="500">
                             <small class="form-text text-muted">
                                 Number of pages students can read in preview mode (default: 50 pages)
@@ -285,7 +286,7 @@
             const newRow = document.createElement('div');
             newRow.className = 'author-row mb-3';
             newRow.setAttribute('data-row-index', authorRowIndex);
-            
+
             newRow.innerHTML = `
                 <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                     <div class="card-body p-3">
@@ -309,7 +310,7 @@
                     </div>
                 </div>
             `;
-            
+
             container.appendChild(newRow);
             updateAuthorOptions();
             authorRowIndex++;
@@ -319,16 +320,16 @@
             const row = btn.closest('.author-row');
             const container = document.getElementById('authors-container');
             const rows = container.querySelectorAll('.author-row');
-            
+
             // Don't allow removing if only one author row remains
             if (rows.length <= 1) {
                 alert('At least one author is required.');
                 return;
             }
-            
+
             row.remove();
             updateAuthorOptions();
-            
+
             // Show/hide remove buttons based on number of rows
             const remainingRows = container.querySelectorAll('.author-row');
             remainingRows.forEach((r, index) => {
@@ -342,19 +343,19 @@
         function updateAuthorOptions() {
             const rows = document.querySelectorAll('.author-row');
             const selectedAuthors = [];
-            
+
             rows.forEach(row => {
                 const select = row.querySelector('.author-select');
                 if (select.value) {
                     selectedAuthors.push(select.value);
                 }
             });
-            
+
             rows.forEach(row => {
                 const select = row.querySelector('.author-select');
                 const currentValue = select.value;
                 const options = select.querySelectorAll('option');
-                
+
                 options.forEach(option => {
                     if (option.value === '' || option.value === currentValue) {
                         option.style.display = '';
@@ -385,7 +386,7 @@
                     select.classList.add('is-invalid');
                 }
             });
-            
+
             if (hasError) {
                 e.preventDefault();
                 alert('Please select an author for all author fields.');
@@ -408,7 +409,7 @@
         // Initialize author options on page load
         updateAuthorOptions();
     </script>
-    
+
     <style>
         .author-row {
             margin-bottom: 1rem;

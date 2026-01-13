@@ -35,29 +35,38 @@
                                 @php
                                     $hasProfilePicture = !empty($user->profile_picture) && $user->profile_picture !== null && $user->profile_picture !== '';
                                 @endphp
-                                @if($hasProfilePicture)
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
-                                        alt="{{ $user->name }}"
-                                        id="profile-preview"
-                                        class="profile-image-clickable"
-                                        style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;"
-                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div id="profile-preview-fallback" class="profile-image-clickable" style="display: none; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
-                                        <span style="font-size: 4rem; color: white;">
-                                            <i class="fas fa-user"></i>
-                                        </span>
-                                    </div>
-                                @else
-                                    <div id="profile-preview" class="profile-image-clickable"
-                                        style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
-                                        <span style="font-size: 4rem; color: white;">
-                                            <i class="fas fa-user"></i>
-                                        </span>
-                                    </div>
-                                @endif
+                                <input type="file" class="form-control @error('profile_picture') is-invalid @enderror"
+                                    name="profile_picture" id="profile_picture" accept="image/*" style="display: none;">
+                                <label for="profile_picture" style="cursor: pointer; display: inline-block; margin: 0;">
+                                    @if($hasProfilePicture)
+                                        @php
+                                            $profileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture)
+                                                ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture)
+                                                : asset('storage/' . $user->profile_picture);
+                                            // Add cache buster to ensure fresh image after update
+                                            $profileImageUrl .= '?v=' . time();
+                                        @endphp
+                                        <img src="{{ $profileImageUrl }}"
+                                            alt="{{ $user->name }}"
+                                            id="profile-preview"
+                                            class="profile-image-clickable"
+                                            style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease; display: block; margin: 0 auto;"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div id="profile-preview-fallback" class="profile-image-clickable" style="display: none; width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
+                                            <span style="font-size: 4rem; color: white;">
+                                                <i class="fas fa-user"></i>
+                                            </span>
+                                        </div>
+                                    @else
+                                        <div id="profile-preview" class="profile-image-clickable"
+                                            style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;">
+                                            <span style="font-size: 4rem; color: white;">
+                                                <i class="fas fa-user"></i>
+                                            </span>
+                                        </div>
+                                    @endif
+                                </label>
                             </div>
-                            <input type="file" class="form-control @error('profile_picture') is-invalid @enderror"
-                                name="profile_picture" id="profile_picture" accept="image/*" style="display: none;">
                             <small class="form-text text-muted">Click on the image above to upload. Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
                             <div class="mt-3" id="remove-profile-section" style="{{ $hasProfilePicture ? '' : 'display: none;' }}">
                                 <button type="button" class="btn btn-outline-danger btn-sm" id="remove-profile-btn" style="width: 100%;" {{ $hasProfilePicture ? '' : 'disabled' }}>
@@ -219,9 +228,10 @@
 
                 const profileInput = document.getElementById('profile_picture');
                 const profilePreview = document.getElementById('profile-preview');
+                const profilePreviewFallback = document.getElementById('profile-preview-fallback');
 
-                if (!profileInput || !profilePreview) {
-                    // Retry if elements not found (with limit)
+                if (!profileInput) {
+                    // Retry if input not found (with limit)
                     if (retryCount < maxRetries) {
                         retryCount++;
                         setTimeout(initializeProfileUpload, 100);
@@ -232,95 +242,172 @@
                 // Mark as initialized to prevent duplicate listeners
                 initialized = true;
 
-                // Function to trigger file input
-                function triggerFileInput(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const input = document.getElementById('profile_picture');
-                    if (input) {
-                        input.click();
-                    }
-                }
+                // Test if file input is accessible
+                console.log('Profile input found:', profileInput);
+                console.log('Profile preview found:', profilePreview);
 
                 // Function to handle hover effects
                 function handleHover(e) {
+                    const target = e.currentTarget;
                     if (e.type === 'mouseenter') {
-                        this.style.transform = 'scale(1.05)';
-                        this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                        target.style.transform = 'scale(1.05)';
+                        target.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
                     } else {
-                        this.style.transform = 'scale(1)';
-                        this.style.boxShadow = 'none';
+                        target.style.transform = 'scale(1)';
+                        target.style.boxShadow = 'none';
                     }
                 }
 
-                // Attach click event to preview (only if not already attached)
-                if (!profilePreview.hasAttribute('data-listener-attached')) {
-                    profilePreview.setAttribute('data-listener-attached', 'true');
-                    profilePreview.addEventListener('click', triggerFileInput);
-                    profilePreview.addEventListener('mouseenter', handleHover);
-                    profilePreview.addEventListener('mouseleave', handleHover);
+                // Attach hover effects to preview image (if exists)
+                if (profilePreview) {
+                    if (!profilePreview.hasAttribute('data-hover-attached')) {
+                        profilePreview.setAttribute('data-hover-attached', 'true');
+                        profilePreview.addEventListener('mouseenter', handleHover);
+                        profilePreview.addEventListener('mouseleave', handleHover);
+                    }
                 }
 
-                // Handle file input change
-                profileInput.addEventListener('change', function(e) {
-                    previewImage(this);
-                }, { once: false });
+                // Attach hover effects to fallback div (if exists)
+                if (profilePreviewFallback) {
+                    if (!profilePreviewFallback.hasAttribute('data-hover-attached')) {
+                        profilePreviewFallback.setAttribute('data-hover-attached', 'true');
+                        profilePreviewFallback.addEventListener('mouseenter', handleHover);
+                        profilePreviewFallback.addEventListener('mouseleave', handleHover);
+                    }
+                }
 
-                // Preview image function
+                // Handle file input change - use multiple methods to ensure it works
+                function handleFileChange(e) {
+                    console.log('File input changed', this.files);
+                    if (this.files && this.files[0]) {
+                        previewImage(this);
+                    }
+                }
+
+                // Remove any existing listeners and add new one
+                profileInput.removeEventListener('change', handleFileChange);
+                profileInput.addEventListener('change', handleFileChange);
+
+                // Also listen for input event as backup
+                profileInput.addEventListener('input', handleFileChange);
+
+                // Preview image function - make it globally accessible
                 window.previewImage = function(input) {
-                    if (input.files && input.files[0]) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const preview = document.getElementById('profile-preview');
-                            if (!preview) return;
-
-                            if (preview.tagName === 'IMG') {
-                                preview.src = e.target.result;
-                            } else {
-                                // Replace div with img
-                                const img = document.createElement('img');
-                                img.id = 'profile-preview';
-                                img.className = 'profile-image-clickable';
-                                img.src = e.target.result;
-                                img.alt = '{{ $user->name }}';
-                                img.style.cssText = 'width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease;';
-
-                                // Reattach event listeners to new image
-                                img.setAttribute('data-listener-attached', 'true');
-                                img.addEventListener('click', triggerFileInput);
-                                img.addEventListener('mouseenter', handleHover);
-                                img.addEventListener('mouseleave', handleHover);
-
-                                preview.parentNode.replaceChild(img, preview);
-                            }
-
-                            // Show remove button section when new image is selected
-                            const removeSection = document.getElementById('remove-profile-section');
-                            const removeBtn = document.getElementById('remove-profile-btn');
-                            if (removeSection) {
-                                removeSection.style.display = 'block';
-                            }
-                            if (removeBtn) {
-                                removeBtn.disabled = false;
-                            }
-
-                            // Reset remove button when new image is selected
-                            const removeInput = document.getElementById('remove_profile_picture');
-                            if (removeInput) {
-                                removeInput.value = '0';
-                            }
-                            if (removeBtn) {
-                                removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove Profile Picture';
-                                removeBtn.classList.remove('btn-outline-secondary');
-                                removeBtn.classList.add('btn-outline-danger');
-                            }
-                            const removeWarning = document.getElementById('remove-warning');
-                            if (removeWarning) {
-                                removeWarning.style.display = 'none';
-                            }
-                        };
-                        reader.readAsDataURL(input.files[0]);
+                    console.log('previewImage called', input);
+                    if (!input) {
+                        input = document.getElementById('profile_picture');
                     }
+                    if (!input || !input.files || !input.files[0]) {
+                        console.log('No file selected');
+                        return;
+                    }
+
+                    const file = input.files[0];
+                    console.log('File selected:', file.name, file.type, file.size);
+
+                    // Validate file type
+                    if (!file.type.match('image.*')) {
+                        alert('Please select an image file');
+                        return;
+                    }
+
+                    // Validate file size (2MB = 2 * 1024 * 1024 bytes)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('Image size must be less than 2MB');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        console.log('FileReader loaded, result length:', e.target.result.length);
+                        const preview = document.getElementById('profile-preview');
+                        const fallback = document.getElementById('profile-preview-fallback');
+
+                        if (!preview) {
+                            console.error('Preview element not found');
+                            alert('Error: Preview element not found');
+                            return;
+                        }
+
+                        // Hide fallback if it exists
+                        if (fallback) {
+                            fallback.style.display = 'none';
+                        }
+
+                        if (preview.tagName === 'IMG') {
+                            // Update existing image
+                            preview.src = e.target.result;
+                            preview.style.display = 'block';
+                            console.log('Updated existing image src');
+                        } else {
+                            // Replace div with img
+                            const img = document.createElement('img');
+                            img.id = 'profile-preview';
+                            img.className = 'profile-image-clickable';
+                            img.src = e.target.result;
+                            img.alt = '{{ $user->name }}';
+                            img.style.cssText = 'width: 200px; height: 200px; border-radius: 50%; object-fit: cover; border: 4px solid #ddd; cursor: pointer; transition: all 0.3s ease; display: block; margin: 0 auto;';
+
+                            // Reattach hover effects to new image
+                            img.setAttribute('data-hover-attached', 'true');
+                            img.addEventListener('mouseenter', handleHover);
+                            img.addEventListener('mouseleave', handleHover);
+
+                            // Get the label parent to replace within it
+                            const label = preview.closest('label');
+                            if (label) {
+                                // Replace preview within label
+                                label.replaceChild(img, preview);
+                                console.log('Replaced div with img inside label');
+                            } else {
+                                // Fallback: replace in parent
+                                preview.parentNode.replaceChild(img, preview);
+                                console.log('Replaced div with img in parent');
+                            }
+
+                            // Update the preview reference for future use
+                            window.currentProfilePreview = img;
+                        }
+
+                        // Show remove button section when new image is selected
+                        const removeSection = document.getElementById('remove-profile-section');
+                        const removeBtn = document.getElementById('remove-profile-btn');
+                        if (removeSection) {
+                            removeSection.style.display = 'block';
+                        }
+                        if (removeBtn) {
+                            removeBtn.disabled = false;
+                        }
+
+                        // Reset remove button when new image is selected
+                        const removeInput = document.getElementById('remove_profile_picture');
+                        if (removeInput) {
+                            removeInput.value = '0';
+                        }
+                        if (removeBtn) {
+                            removeBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Remove Profile Picture';
+                            removeBtn.classList.remove('btn-outline-secondary');
+                            removeBtn.classList.add('btn-outline-danger');
+                        }
+                        const removeWarning = document.getElementById('remove-warning');
+                        if (removeWarning) {
+                            removeWarning.style.display = 'none';
+                        }
+                    };
+
+                    reader.onerror = function(error) {
+                        console.error('FileReader error:', error);
+                        alert('Error reading file. Please try again.');
+                    };
+
+                    reader.onprogress = function(e) {
+                        if (e.lengthComputable) {
+                            const percentLoaded = Math.round((e.loaded / e.total) * 100);
+                            console.log('FileReader progress:', percentLoaded + '%');
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
                 };
 
                 // Handle remove profile picture button
@@ -391,6 +478,13 @@
                     initializeProfileUpload();
                 }
             }, 300);
+
+            // Also try after window load
+            window.addEventListener('load', function() {
+                if (!initialized) {
+                    initializeProfileUpload();
+                }
+            });
         })();
     </script>
 @endsection

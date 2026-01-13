@@ -33,9 +33,17 @@
                                 $user = auth()->user();
                             @endphp
                             @if($user->profile_picture)
-                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture) ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture) : asset('storage/' . $user->profile_picture) }}"
+                                @php
+                                    $headerProfileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($user->profile_picture)
+                                        ? \Illuminate\Support\Facades\Storage::disk('public')->url($user->profile_picture)
+                                        : asset('storage/' . $user->profile_picture);
+                                    // Add cache buster to ensure fresh image after update
+                                    $headerProfileImageUrl .= '?v=' . time();
+                                @endphp
+                                <img src="{{ $headerProfileImageUrl }}"
                                     alt="{{ $user->name }}"
-                                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
+                                    style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;"
+                                    onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
                             @else
                                 <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,0.4); flex-shrink: 0;">
                                     <i class="fas fa-user" style="color: white; font-size: 1rem; margin: 0; padding: 0; line-height: 1;"></i>
@@ -142,37 +150,37 @@
             function setMenuBarSticky() {
                 const header = document.getElementById('header');
                 const menubar = document.getElementById('menubar');
-                
+
                 if (!header || !menubar) {
                     // Retry if elements not found
                     setTimeout(setMenuBarSticky, 100);
                     return;
                 }
-                
+
                 // Get header height
                 const headerHeight = header.offsetHeight || header.getBoundingClientRect().height;
-                
+
                 // Set header sticky
                 header.style.cssText += 'position: sticky !important; top: 0 !important; z-index: 1000 !important; width: 100% !important;';
-                
+
                 // Set menu bar sticky below header
                 menubar.style.cssText += 'position: sticky !important; top: ' + headerHeight + 'px !important; z-index: 999 !important; width: 100% !important;';
-                
+
                 // Store header height in CSS variable for future use
                 document.documentElement.style.setProperty('--header-height', headerHeight + 'px');
             }
-            
+
             // Run immediately
             setMenuBarSticky();
-            
+
             // Run on DOM ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', setMenuBarSticky);
             }
-            
+
             // Run on window load
             window.addEventListener('load', setMenuBarSticky);
-            
+
             // Run on scroll (with throttling)
             let scrollTimer = null;
             window.addEventListener('scroll', function() {
@@ -183,7 +191,7 @@
                     }, 50);
                 }
             }, { passive: true });
-            
+
             // Run on resize
             let resizeTimer = null;
             window.addEventListener('resize', function() {
