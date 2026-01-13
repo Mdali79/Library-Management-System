@@ -19,15 +19,15 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <div class="d-flex justify-content-end align-items-center mb-3">
-                        <div>
+                    <div class="d-flex justify-content-end align-items-center mb-3" style="display: flex !important; justify-content: flex-end !important; align-items: center !important; margin-bottom: 1rem !important; width: 100%;">
+                        <div style="display: flex !important; flex-wrap: nowrap;">
                             @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
-                                <a class="add-new" href="{{ route('book_issue.create') }}">
+                                <a class="add-new" href="{{ route('book_issue.create') }}" style="text-decoration: none; margin-right: 0;">
                                     <i class="fas fa-plus"></i> Issue Book
                                 </a>
                             @endif
                             @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
-                                <a class="add-new" href="{{ route('book_issue.pending') }}" style="margin-left: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                <a class="add-new" href="{{ route('book_issue.pending') }}" style="text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706); margin-left: 10px;">
                                     <i class="fas fa-clock"></i> Pending Requests
                                 </a>
                             @endif
