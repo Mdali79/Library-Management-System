@@ -3,13 +3,13 @@
 
     <div id="wrapper-admin">
         <div class="container">
-            <div class="row">
-                <div class="offset-md-3 col-md-6">
-                    <div class="logo border border-danger">
-                        <img src="{{ asset('images/library.png') }}" alt="">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 4rem);">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                    <div class="logo" style="text-align: center; margin-bottom: 1.5rem;">
+                        <img src="{{ asset('images/library.png') }}" alt="" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
                     </div>
-                    <div class="mb-3">
-                        <a href="{{ route('register') }}" class="btn btn-secondary btn-sm">
+                    <div class="mb-3" style="text-align: left;">
+                        <a href="{{ route('register') }}" class="btn btn-secondary btn-sm" style="background: rgba(255, 255, 255, 0.9); color: #333; border: 1px solid rgba(0,0,0,0.1);">
                             <i class="fas fa-arrow-left"></i> Back to Registration
                         </a>
                     </div>
@@ -61,7 +61,7 @@
                             </small>
                         </div>
 
-                        <button type="submit" class="btn btn-danger btn-lg btn-block" id="verifyBtn">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block" id="verifyBtn" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             <i class="fas fa-check-circle"></i> Verify Email
                         </button>
 
@@ -76,7 +76,7 @@
                         </div>
 
                         <div class="mt-4 text-center">
-                            <p class="text-white" style="font-size: 0.9rem;">
+                            <p style="color: rgba(255, 255, 255, 0.95); font-size: 0.9rem; margin-bottom: 0;">
                                 <i class="fas fa-shield-alt"></i> Your information is secure. This code will expire in 15 minutes.
                             </p>
                         </div>
@@ -225,5 +225,33 @@
             }
         })();
     </script>
+
+    <style>
+        #wrapper-admin .yourform {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            #wrapper-admin .yourform {
+                padding: 3rem;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #wrapper-admin .yourform {
+                padding: 3.5rem;
+            }
+        }
+
+        #otp-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 0.2rem rgba(124, 58, 237, 0.25);
+        }
+    </style>
 
 @endsection
