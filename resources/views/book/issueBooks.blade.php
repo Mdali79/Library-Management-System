@@ -19,19 +19,17 @@
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <div class="d-flex justify-content-end align-items-center mb-3" style="display: flex !important; justify-content: flex-end !important; align-items: center !important; margin-bottom: 1rem !important; width: 100%;">
-                        <div style="display: flex !important; flex-wrap: nowrap;">
-                            @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
-                                <a class="add-new" href="{{ route('book_issue.create') }}" style="text-decoration: none; margin-right: 0;">
-                                    <i class="fas fa-plus"></i> Issue Book
-                                </a>
-                            @endif
-                            @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
-                                <a class="add-new" href="{{ route('book_issue.pending') }}" style="text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706); margin-left: 10px;">
-                                    <i class="fas fa-clock"></i> Pending Requests
-                                </a>
-                            @endif
-                        </div>
+                    <div style="text-align: right !important; margin-bottom: 1rem; width: 100%;">
+                        @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                            <a class="add-new" href="{{ route('book_issue.create') }}" style="text-decoration: none; display: inline-block;">
+                                <i class="fas fa-plus"></i> Issue Book
+                            </a>
+                        @endif
+                        @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
+                            <a class="add-new" href="{{ route('book_issue.pending') }}" style="text-decoration: none; background: linear-gradient(135deg, #f59e0b, #d97706); display: inline-block; margin-left: 10px;">
+                                <i class="fas fa-clock"></i> Pending Requests
+                            </a>
+                        @endif
                     </div>
                     @if(session('success'))
                         <div class="alert alert-success">{{ session('success') }}</div>
@@ -141,4 +139,12 @@
             </div>
         </div>
     </div>
+    <style>
+        /* Ensure buttons align with table right edge - override any conflicting styles */
+        #admin-content .container .row .col-md-12 > div:first-child {
+            text-align: right !important;
+            width: 100% !important;
+            display: block !important;
+        }
+    </style>
 @endsection
