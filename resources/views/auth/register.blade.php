@@ -3,13 +3,13 @@
 
     <div id="wrapper-admin">
         <div class="container">
-            <div class="row">
-                <div class="offset-md-3 col-md-6">
-                    <div class="logo border border-danger">
-                        <img src="{{ asset('images/library.png') }}" alt="">
+            <div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 4rem);">
+                <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+                    <div class="logo" style="text-align: center; margin-bottom: 1.5rem; display: flex; justify-content: center; align-items: center;">
+                        <img src="{{ asset('images/library.png') }}" alt="" style="max-width: 200px; height: auto; display: block; margin: 0 auto;">
                     </div>
-                    <div class="mb-3">
-                        <a href="{{ route('login') }}" class="btn btn-secondary btn-sm">
+                    <div class="mb-3" style="text-align: left;">
+                        <a href="{{ route('login') }}" class="btn btn-secondary btn-sm" style="background: rgba(255, 255, 255, 0.9); color: #333; border: 1px solid rgba(0,0,0,0.1);">
                             <i class="fas fa-arrow-left"></i> Back to Login
                         </a>
                     </div>
@@ -223,7 +223,7 @@
                             </a>
                         </div>
                         <div class="mt-4 text-center">
-                            <p class="text-white">Already have an account?
+                            <p style="color: rgba(255, 255, 255, 0.95); margin-bottom: 0;">Already have an account?
                                 <a href="{{ route('login') }}" style="color: #fff; font-weight: 600; text-decoration: underline;">
                                     Login Here
                                 </a>
@@ -236,6 +236,27 @@
     </div>
 
     <style>
+        #wrapper-admin .yourform {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            #wrapper-admin .yourform {
+                padding: 3rem;
+            }
+        }
+
+        @media (min-width: 992px) {
+            #wrapper-admin .yourform {
+                padding: 3.5rem;
+            }
+        }
+
         .form-group > div[style*="position: relative"] {
             position: relative;
         }
