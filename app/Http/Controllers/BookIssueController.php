@@ -34,7 +34,7 @@ class BookIssueController extends Controller
             if ($studentRecord) {
                 $books = book_issue::where('student_id', $studentRecord->id)
                     ->with(['book', 'student'])
-                    ->latest()
+                    ->orderBy('id', 'asc')
                     ->paginate(10);
             } else {
                 // Return empty paginated collection
@@ -43,7 +43,7 @@ class BookIssueController extends Controller
         } else {
             // Admin see all issues
             $books = book_issue::with(['book', 'student', 'approver'])
-                ->latest()
+                ->orderBy('id', 'asc')
                 ->paginate(10);
         }
 

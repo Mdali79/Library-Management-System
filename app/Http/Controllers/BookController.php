@@ -93,7 +93,7 @@ class BookController extends Controller
         $suggestions = $this->getKeywordSuggestions($request->get('search', ''));
 
         return view('book.index', [
-            'books' => $query->latest()->paginate(10),
+            'books' => $query->orderBy('id', 'asc')->paginate(10),
             'authors' => auther::latest()->get(),
             'publishers' => publisher::latest()->get(),
             'categories' => category::latest()->get(),

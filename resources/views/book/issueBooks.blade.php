@@ -16,21 +16,23 @@
                         @endif
                     </h2>
                 </div>
-                <div class="col-md-6 text-right">
-                    @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
-                        <a class="add-new" href="{{ route('book_issue.create') }}">
-                            <i class="fas fa-plus"></i> Issue Book
-                        </a>
-                    @endif
-                    @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
-                        <a class="add-new" href="{{ route('book_issue.pending') }}" style="margin-left: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
-                            <i class="fas fa-clock"></i> Pending Requests
-                        </a>
-                    @endif
-                </div>
             </div>
             <div class="row">
                 <div class="col-md-12">
+                    <div class="d-flex justify-content-end align-items-center mb-3">
+                        <div>
+                            @if(!isset($role) || !in_array($role, ['Student', 'Teacher']))
+                                <a class="add-new" href="{{ route('book_issue.create') }}">
+                                    <i class="fas fa-plus"></i> Issue Book
+                                </a>
+                            @endif
+                            @if(auth()->user()->role == 'Librarian' || auth()->user()->role == 'Admin')
+                                <a class="add-new" href="{{ route('book_issue.pending') }}" style="margin-left: 10px; background: linear-gradient(135deg, #f59e0b, #d97706);">
+                                    <i class="fas fa-clock"></i> Pending Requests
+                                </a>
+                            @endif
+                        </div>
+                    </div>
                     @if(session('success'))
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
