@@ -99,7 +99,7 @@
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-danger">
+                                                    <button type="submit" class="btn btn-danger" id="submitReject{{ $registration->id }}">
                                                         <i class="fas fa-times"></i> Reject Registration
                                                     </button>
                                                 </div>
@@ -127,5 +127,55 @@
             </div>
         </div>
     </div>
+
+    <script>
+        // Ensure rejection forms submit properly
+        $(document).ready(function() {
+            // Handle all reject button clicks
+            $('button[id^="submitReject"]').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const btnId = $(this).attr('id');
+                const registrationId = btnId.replace('submitReject', '');
+                const form = $('#rejectForm' + registrationId);
+                
+                // Find textarea using multiple methods
+                let textarea = form.find('textarea[name="rejection_reason"]');
+                if (textarea.length === 0) {
+                    textarea = $('#rejection_reason' + registrationId);
+                }
+                
+                // Get the value using native JavaScript to ensure we get the actual value
+                let rejectionReason = '';
+                if (textarea.length > 0) {
+                    const textareaElement = textarea[0]; // Get native DOM element
+                    rejectionReason = textareaElement.value ? textareaElement.value.trim() : '';
+                }
+
+                // Validate rejection reason
+                if (!rejectionReason || rejectionReason.length === 0) {
+                    alert('Please provide a rejection reason.');
+                    if (textarea.length > 0) {
+                        textarea[0].focus();
+                        textarea.addClass('is-invalid');
+                    }
+                    return false;
+                }
+
+                // Remove invalid class if present
+                if (textarea.length > 0) {
+                    textarea.removeClass('is-invalid');
+                }
+
+                // Submit the form
+                if (form.length > 0 && form[0]) {
+                    form[0].submit();
+                } else {
+                    console.error('Form not found for registration ID: ' + registrationId);
+                }
+            });
+        });
+    </script>
 @endsection
 
