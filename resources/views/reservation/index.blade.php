@@ -30,7 +30,7 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <input type="text" name="book_id" class="form-control" 
+                                <input type="text" name="book_id" class="form-control"
                                     placeholder="Book ID" value="{{ request('book_id') }}">
                             </div>
                             <div class="col-md-2">
@@ -103,8 +103,7 @@
                                         @if(in_array($reservation->status, ['pending', 'available']))
                                             <form action="{{ route('reservations.cancel', $reservation->id) }}" method="POST" style="display: inline;">
                                                 @csrf
-                                                <button type="submit" class="btn btn-sm btn-danger" 
-                                                    onclick="return confirm('Are you sure you want to cancel this reservation?')">Cancel</button>
+                                                <button type="button" class="btn btn-sm btn-danger confirm-delete" data-confirm-message="Are you sure you want to cancel this reservation?">Cancel</button>
                                             </form>
                                         @endif
                                     </td>

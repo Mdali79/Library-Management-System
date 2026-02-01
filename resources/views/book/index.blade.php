@@ -230,8 +230,8 @@
                                         </td>
                                         <td class="delete" style="text-align: center;">
                                             <form action="{{ route('book.destroy', $book) }}" method="post" class="form-hidden">
-                                                <button class="btn btn-danger delete-book">Delete</button>
                                                 @csrf
+                                                <button type="button" class="btn btn-danger confirm-delete" data-confirm-message="Are you sure you want to delete the book &quot;{{ $book->name }}&quot;? This action cannot be undone.">Delete</button>
                                             </form>
                                         </td>
                                     @endif

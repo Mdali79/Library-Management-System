@@ -11,6 +11,7 @@ use App\Models\settings;
 use App\Models\student;
 use App\Models\Fine;
 use App\Models\User;
+use App\Services\FineCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -349,25 +350,13 @@ class BookIssueController extends Controller
         $bookIssue = book_issue::with(['book', 'student'])->findOrFail($id);
         $settings = settings::latest()->first();
 
-        // Calculate fine if overdue
-        $fine = 0;
-        $daysOverdue = 0;
-        $returnDate = Carbon::parse($bookIssue->return_date);
-        $today = Carbon::now();
-
-        if ($today->gt($returnDate)) {
-            $daysOverdue = $today->diffInDays($returnDate);
-            // Only charge fine if past grace period
-            if ($daysOverdue > $settings->fine_grace_period_days) {
-                $chargeableDays = $daysOverdue - $settings->fine_grace_period_days;
-                $fine = $settings->fine_per_day * $chargeableDays;
-            }
-        }
+        $result = FineCalculator::calculate($bookIssue->return_date, null, $settings);
 
         return view('book.issueBook_edit', [
             'bookIssue' => $bookIssue,
-            'fine' => $fine,
-            'daysOverdue' => $daysOverdue,
+            'fine' => $result['amount'],
+            'daysOverdue' => $result['days_overdue'],
+            'chargeableDays' => $result['chargeable_days'] ?? 0,
             'settings' => $settings,
         ]);
     }
@@ -381,26 +370,20 @@ class BookIssueController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $bookIssue = book_issue::findOrFail($id);
+        $bookIssue = book_issue::with('student')->findOrFail($id);
         $settings = settings::latest()->first();
-        $returnDate = Carbon::parse($bookIssue->return_date);
-        $today = Carbon::now();
 
-        // Calculate fine
-        $fine = 0;
-        $daysOverdue = 0;
-        if ($today->gt($returnDate)) {
-            $daysOverdue = $today->diffInDays($returnDate);
-            if ($daysOverdue > $settings->fine_grace_period_days) {
-                $chargeableDays = $daysOverdue - $settings->fine_grace_period_days;
-                $fine = $settings->fine_per_day * $chargeableDays;
-            }
+        if (!$settings) {
+            return redirect()->back()->withErrors(['error' => 'Library settings are not configured. Please set return days and fine settings in Settings.']);
         }
 
-        // Generate return receipt number
+        $result = FineCalculator::calculate($bookIssue->return_date, null, $settings);
+        $fine = $result['amount'];
+        $daysOverdue = $result['days_overdue'];
+
+        $today = Carbon::now();
         $returnReceiptNumber = 'RETURN-' . strtoupper(Str::random(8));
 
-        // Update book issue
         $bookIssue->issue_status = 'Y';
         $bookIssue->return_day = $today;
         $bookIssue->fine_amount = $fine;
@@ -410,24 +393,30 @@ class BookIssueController extends Controller
         $bookIssue->is_overdue = $daysOverdue > 0;
         $bookIssue->save();
 
-        // Update book quantities
         $book = book::find($bookIssue->book_id);
         $book->available_quantity = $book->available_quantity + 1;
         $book->issued_quantity = max(0, $book->issued_quantity - 1);
         $book->status = 'Y';
         $book->save();
 
-        // Create fine record if applicable
         if ($fine > 0) {
-            Fine::create([
-                'book_issue_id' => $bookIssue->id,
-                'student_id' => $bookIssue->student_id,
-                'user_id' => $bookIssue->student->user_id ?? null,
-                'amount' => $fine,
-                'days_overdue' => $daysOverdue,
-                'status' => 'pending',
-                'notes' => 'Auto-calculated fine for overdue return',
-            ]);
+            $existingFine = Fine::where('book_issue_id', $bookIssue->id)->first();
+            if ($existingFine) {
+                $existingFine->amount = $fine;
+                $existingFine->days_overdue = $daysOverdue;
+                $existingFine->notes = ($existingFine->notes ?? '') . ' | Updated at return: ' . number_format($fine, 2) . ' tk';
+                $existingFine->save();
+            } else {
+                Fine::create([
+                    'book_issue_id' => $bookIssue->id,
+                    'student_id' => $bookIssue->student_id,
+                    'user_id' => $bookIssue->student->user_id ?? null,
+                    'amount' => $fine,
+                    'days_overdue' => $daysOverdue,
+                    'status' => 'pending',
+                    'notes' => 'Auto-calculated fine for overdue return',
+                ]);
+            }
         }
 
         return redirect()->route('book_issued')->with('success', 'Book returned successfully. Receipt: ' . $returnReceiptNumber . ($fine > 0 ? '. Fine: ' . number_format($fine, 2) . ' tk' : ''));

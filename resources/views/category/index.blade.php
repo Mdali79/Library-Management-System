@@ -43,10 +43,9 @@
                                         <a href="{{ route('category.edit', $category) }}" class="btn btn-success">Edit</a>
                                     </td>
                                     <td class="delete" style="text-align: center;">
-                                        <form action="{{ route('category.destroy', $category) }}" method="post"
-                                            class="form-hidden">
-                                            <button class="btn btn-danger delete-author">Delete</button>
+                                        <form action="{{ route('category.destroy', $category) }}" method="post" class="form-hidden">
                                             @csrf
+                                            <button type="button" class="btn btn-danger confirm-delete" data-confirm-message="Are you sure you want to delete the category &quot;{{ $category->name }}&quot;? This action cannot be undone.">Delete</button>
                                         </form>
                                     </td>
                                 </tr>

@@ -99,7 +99,7 @@
                                             @if($book->request_status == 'pending')
                                                 <form action="{{ route('book_issue.destroy', $book->id) }}" method="post" class="d-inline">
                                                     @csrf
-                                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this request?')">
+                                                    <button type="button" class="btn btn-danger btn-sm confirm-delete" data-confirm-message="Are you sure you want to cancel this book request?">
                                                         <i class="fas fa-times"></i> Cancel
                                                     </button>
                                                 </form>
@@ -118,8 +118,8 @@
                                         <td class="delete">
                                             @if($book->issue_status != 'Y')
                                                 <form action="{{ route('book_issue.destroy', $book) }}" method="post" class="form-hidden">
-                                                    <button class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this book issue?')">Delete</button>
                                                     @csrf
+                                                    <button type="button" class="btn btn-danger confirm-delete" data-confirm-message="Are you sure you want to delete this book issue record? This action cannot be undone.">Delete</button>
                                                 </form>
                                             @endif
                                         </td>

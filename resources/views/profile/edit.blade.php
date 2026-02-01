@@ -98,8 +98,9 @@
 
                         <div class="form-group">
                             <label>Email <span class="text-danger">*</span></label>
+                            <input type="hidden" name="email" value="{{ old('email', $user->email) }}">
                             <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                placeholder="Email Address" name="email" value="{{ old('email', $user->email) }}" required>
+                                placeholder="Email Address" value="{{ old('email', $user->email) }}" disabled required>
                             @error('email')
                                 <div class="alert alert-danger" role="alert">
                                     {{ $message }}

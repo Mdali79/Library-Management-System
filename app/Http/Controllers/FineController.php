@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Fine;
 use App\Models\book_issue;
 use App\Models\settings;
+use App\Models\student;
+use App\Services\FineCalculator;
+use App\Services\SslCommerzService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -100,29 +103,31 @@ class FineController extends Controller
     }
 
     /**
-     * Process fine payment
+     * Process fine payment (cash or Admin marking online). Students paying online use initiateSslPayment.
      */
     public function pay(Request $request, $id)
     {
         $user = auth()->user();
         $role = $user->role;
-        
+
         $request->validate([
             'payment_method' => 'required|in:cash,online',
             'amount' => 'required|numeric|min:0',
         ]);
 
         $fine = Fine::findOrFail($id);
-        
+
         if ($fine->status == 'paid') {
             return redirect()->back()->withErrors(['error' => 'Fine already paid.']);
         }
 
-        // Students can only pay their own fines
         if ($role === 'Student') {
-            $student = \App\Models\student::where('user_id', $user->id)->first();
+            $student = student::where('user_id', $user->id)->first();
             if (!$student || $fine->student_id != $student->id) {
                 return redirect()->back()->withErrors(['error' => 'You can only pay your own fines.']);
+            }
+            if ($request->payment_method === 'online') {
+                return redirect()->back()->withErrors(['error' => 'Use "Pay with Card/Bank (SSL)" to pay online.']);
             }
         }
 
@@ -136,56 +141,231 @@ class FineController extends Controller
     }
 
     /**
-     * Calculate and create fines for overdue books
+     * Initiate SSLCommerz payment (student only). Redirects to gateway.
+     */
+    public function initiateSslPayment($id)
+    {
+        $user = auth()->user();
+        if ($user->role !== 'Student') {
+            return redirect()->route('fines.index')->withErrors(['error' => 'SSL payment is for students only.']);
+        }
+
+        $student = student::where('user_id', $user->id)->first();
+        if (!$student) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Student profile not found.']);
+        }
+
+        $fine = Fine::with('student.user')->findOrFail($id);
+        if ($fine->student_id != $student->id) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'You can only pay your own fines.']);
+        }
+        if ($fine->status !== 'pending') {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Fine is not pending.']);
+        }
+        if ($fine->amount <= 0) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Invalid fine amount.']);
+        }
+
+        $tranId = 'FINE-' . $fine->id . '-' . uniqid();
+
+        $service = new SslCommerzService();
+        $student = $fine->student;
+        $address = trim($student->address ?? '');
+        $result = $service->createSession([
+            'tran_id' => $tranId,
+            'total_amount' => (float) $fine->amount,
+            'currency' => 'BDT',
+            'success_url' => url()->route('fines.payment.success', ['fine_id' => $fine->id]),
+            'fail_url' => url()->route('fines.payment.fail', ['fine_id' => $fine->id]),
+            'cancel_url' => url()->route('fines.payment.cancel', ['fine_id' => $fine->id]),
+            'cus_name' => $student->name ?? $user->name,
+            'cus_email' => $student->user->email ?? $user->email ?? 'student@example.com',
+            'cus_phone' => $student->phone ?? '00000000000',
+            'cus_add1' => $address !== '' ? $address : 'Library Member',
+            'cus_city' => 'N/A',
+            'cus_country' => 'Bangladesh',
+            'product_name' => 'Library Fine #' . $fine->id,
+            'product_category' => 'Fine',
+        ]);
+
+        if (!$result['success']) {
+            return redirect()->route('fines.index')->withErrors(['error' => $result['error'] ?? 'Could not start payment.']);
+        }
+
+        return redirect()->away($result['gateway_url']);
+    }
+
+    /**
+     * SSLCommerz success callback. Validate and mark fine paid.
+     */
+    public function paymentSuccess(Request $request)
+    {
+        // Gateway may redirect with GET (query) or POST (body)
+        $fineId = $request->get('fine_id');
+        $valId = $request->get('val_id') ?? $request->get('tran_id');
+
+        if (!$fineId || !$valId) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Invalid callback.']);
+        }
+
+        $fine = Fine::find($fineId);
+        if (!$fine) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Fine not found.']);
+        }
+
+        if ($fine->status === 'paid' && $fine->transaction_id === $valId) {
+            return redirect()->route('fines.index')->with('success', 'Payment already recorded.');
+        }
+
+        $service = new SslCommerzService();
+        $validation = $service->validateTransaction($valId);
+
+        if (!$validation['valid'] || ($validation['status'] ?? '') !== 'VALID') {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Payment validation failed or transaction was not successful.']);
+        }
+
+        $gatewayAmount = $validation['amount'] ?? null;
+        if ($gatewayAmount !== null && abs((float) $gatewayAmount - (float) $fine->amount) > 0.01) {
+            return redirect()->route('fines.index')->withErrors(['error' => 'Payment amount mismatch.']);
+        }
+
+        $fine->status = 'paid';
+        $fine->payment_method = 'online';
+        $fine->paid_at = Carbon::now();
+        $fine->transaction_id = $valId;
+        $fine->gateway_status = $validation['status'] ?? 'VALID';
+        $fine->notes = ($fine->notes ?? '') . ' | Paid via SSL (Gateway)';
+        $fine->save();
+
+        return redirect()->route('fines.index')->with('success', 'Fine paid successfully via SSL payment.');
+    }
+
+    /**
+     * SSLCommerz fail callback.
+     */
+    public function paymentFail(Request $request)
+    {
+        return redirect()->route('fines.index')->withErrors(['error' => 'Payment failed or was declined. Your fine remains pending.']);
+    }
+
+    /**
+     * SSLCommerz cancel callback.
+     */
+    public function paymentCancel(Request $request)
+    {
+        return redirect()->route('fines.index')->withErrors(['error' => 'Payment was cancelled. Your fine remains pending.']);
+    }
+
+    /**
+     * SSLCommerz IPN (Instant Payment Notification). Validate and mark fine paid.
+     */
+    public function paymentIpn(Request $request)
+    {
+        $valId = $request->input('val_id') ?? $request->input('tran_id');
+        $fineId = $request->input('fine_id');
+
+        if (!$valId) {
+            return response()->json(['error' => 'Missing val_id'], 400);
+        }
+
+        $fine = $fineId ? Fine::find($fineId) : Fine::where('transaction_id', $valId)->first();
+        if (!$fine) {
+            return response()->json(['error' => 'Fine not found'], 404);
+        }
+
+        if ($fine->status === 'paid' && $fine->transaction_id === $valId) {
+            return response()->json(['message' => 'Already processed']);
+        }
+
+        $service = new SslCommerzService();
+        $validation = $service->validateTransaction($valId);
+
+        if (!$validation['valid'] || ($validation['status'] ?? '') !== 'VALID') {
+            return response()->json(['error' => 'Validation failed'], 400);
+        }
+
+        $gatewayAmount = $validation['amount'] ?? null;
+        if ($gatewayAmount !== null && abs((float) $gatewayAmount - (float) $fine->amount) > 0.01) {
+            return response()->json(['error' => 'Amount mismatch'], 400);
+        }
+
+        $fine->status = 'paid';
+        $fine->payment_method = 'online';
+        $fine->paid_at = Carbon::now();
+        $fine->transaction_id = $valId;
+        $fine->gateway_status = $validation['status'] ?? 'VALID';
+        $fine->notes = ($fine->notes ?? '') . ' | Paid via SSL IPN';
+        $fine->save();
+
+        return response()->json(['message' => 'OK']);
+    }
+
+    /**
+     * Calculate and create/update fines for overdue books (calendar-day logic).
+     * Running again updates existing pending fines so amount grows with days.
      */
     public function calculateOverdueFines()
     {
         $user = auth()->user();
         $role = $user->role;
 
-        // Only Admin can calculate overdue fines
         if ($role !== 'Admin') {
             return redirect()->back()->withErrors(['error' => 'You do not have permission to calculate overdue fines.']);
         }
 
         $settings = settings::latest()->first();
-        $overdueIssues = book_issue::where('issue_status', 'N')
+        if (!$settings) {
+            return redirect()->back()->withErrors(['error' => 'Library settings are not configured. Please set fine settings in Settings.']);
+        }
+
+        $overdueIssues = book_issue::with('student')
+            ->where('issue_status', 'N')
             ->where('return_date', '<', Carbon::now())
-            ->where('is_overdue', false)
             ->get();
 
         $created = 0;
+        $updated = 0;
         foreach ($overdueIssues as $issue) {
-            $returnDate = Carbon::parse($issue->return_date);
-            $daysOverdue = Carbon::now()->diffInDays($returnDate);
-            
-            if ($daysOverdue > $settings->fine_grace_period_days) {
-                $chargeableDays = $daysOverdue - $settings->fine_grace_period_days;
-                $fineAmount = $settings->fine_per_day * $chargeableDays;
+            $result = FineCalculator::calculate($issue->return_date, null, $settings);
+            $fineAmount = $result['amount'];
+            $daysOverdue = $result['days_overdue'];
 
-                // Check if fine already exists
-                $existingFine = Fine::where('book_issue_id', $issue->id)->first();
-                
-                if (!$existingFine) {
-                    Fine::create([
-                        'book_issue_id' => $issue->id,
-                        'student_id' => $issue->student_id,
-                        'user_id' => $issue->student->user_id ?? null,
-                        'amount' => $fineAmount,
-                        'days_overdue' => $daysOverdue,
-                        'status' => 'pending',
-                        'notes' => 'Auto-calculated fine for overdue book',
-                    ]);
-                    $created++;
-                }
-
-                $issue->is_overdue = true;
-                $issue->fine_amount = $fineAmount;
+            if ($fineAmount <= 0) {
+                $issue->is_overdue = $daysOverdue > 0;
+                $issue->fine_amount = 0;
                 $issue->save();
+                continue;
             }
+
+            $existingFine = Fine::where('book_issue_id', $issue->id)->first();
+
+            if ($existingFine) {
+                if ($existingFine->status === 'pending') {
+                    $existingFine->amount = $fineAmount;
+                    $existingFine->days_overdue = $daysOverdue;
+                    $existingFine->save();
+                    $updated++;
+                }
+            } else {
+                Fine::create([
+                    'book_issue_id' => $issue->id,
+                    'student_id' => $issue->student_id,
+                    'user_id' => $issue->student->user_id ?? null,
+                    'amount' => $fineAmount,
+                    'days_overdue' => $daysOverdue,
+                    'status' => 'pending',
+                    'notes' => 'Auto-calculated fine for overdue book',
+                ]);
+                $created++;
+            }
+
+            $issue->is_overdue = true;
+            $issue->fine_amount = $fineAmount;
+            $issue->save();
         }
 
-        return redirect()->back()->with('success', "Calculated fines for {$created} overdue books.");
+        $message = "Calculated fines for overdue books: {$created} new, {$updated} updated.";
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -202,7 +382,7 @@ class FineController extends Controller
         }
 
         $fine = Fine::findOrFail($id);
-        
+
         if ($fine->status == 'waived') {
             return redirect()->back()->withErrors(['error' => 'Fine already waived.']);
         }

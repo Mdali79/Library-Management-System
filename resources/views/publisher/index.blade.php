@@ -29,10 +29,9 @@
                                         <a href="{{ route('publisher.edit', $publisher) }}" class="btn btn-success">Edit</a>
                                     </td>
                                     <td class="delete" style="text-align: center;">
-                                        <form action="{{ route('publisher.destroy', $publisher) }}" method="post"
-                                            class="form-hidden">
-                                            <button class="btn btn-danger delete-author">Delete</button>
+                                        <form action="{{ route('publisher.destroy', $publisher) }}" method="post" class="form-hidden">
                                             @csrf
+                                            <button type="button" class="btn btn-danger confirm-delete" data-confirm-message="Are you sure you want to delete the publisher &quot;{{ $publisher->name }}&quot;? This action cannot be undone.">Delete</button>
                                         </form>
                                     </td>
                                 </tr>

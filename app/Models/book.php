@@ -13,7 +13,7 @@ class book extends Model
 {
     use HasFactory;
     protected $guarded = [];
-    
+
     protected $fillable = [
         'name',
         'category_id',
@@ -39,7 +39,7 @@ class book extends Model
      */
     public function auther(): BelongsTo
     {
-        return $this->belongsTo(auther::class,'auther_id','id');
+        return $this->belongsTo(auther::class, 'auther_id', 'id');
     }
 
     /**
@@ -110,17 +110,17 @@ class book extends Model
         // Check which column exists in the table
         $columns = \Schema::getColumnListing('book_authors');
         $foreignKey = in_array('auther_id', $columns) ? 'auther_id' : 'author_id';
-        
+
         $relation = $this->belongsToMany(auther::class, 'book_authors', 'book_id', $foreignKey)
             ->withTimestamps();
-        
+
         // Add pivot columns if they exist
         if (in_array('is_main_author', $columns) && in_array('is_corresponding_author', $columns)) {
             $relation->withPivot('is_main_author', 'is_corresponding_author');
         } elseif (in_array('author_type', $columns)) {
             $relation->withPivot('author_type', 'order');
         }
-        
+
         return $relation;
     }
 
@@ -191,7 +191,7 @@ class book extends Model
         ];
 
         $categoryName = strtolower($this->category->name);
-        
+
         foreach ($cseCategoryKeywords as $keyword) {
             if (stripos($categoryName, strtolower($keyword)) !== false) {
                 return true;

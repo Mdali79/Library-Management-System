@@ -40,10 +40,9 @@
                                         <a href="{{ route('student.edit', $student) }}>" class="btn btn-success">Edit</a>
                                     </td>
                                     <td class="delete" style="text-align: center;">
-                                        <form action="{{ route('student.destroy', $student->id) }}" method="post"
-                                            class="form-hidden">
-                                            <button class="btn btn-danger delete-student">Delete</button>
+                                        <form action="{{ route('student.destroy', $student->id) }}" method="post" class="form-hidden">
                                             @csrf
+                                            <button type="button" class="btn btn-danger confirm-delete" data-confirm-message="Are you sure you want to delete the student &quot;{{ $student->name }}&quot;? This action cannot be undone.">Delete</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -89,24 +88,6 @@
         //Hide modal box
         $('#close-btn').on("click", function() {
             $("#modal").hide();
-        });
-
-        //delete student script
-        $(".delete-student").on("click", function() {
-            var s_id = $(this).data("sid");
-            $.ajax({
-                url: "delete-student.php",
-                type: "POST",
-                data: {
-                    sid: s_id
-                },
-                success: function(data) {
-                    $(".message").html(data);
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 2000);
-                }
-            });
         });
     </script>
 @endsection

@@ -31,6 +31,15 @@ Route::get('/', function () {
 Route::post('/', [LoginController::class, 'login'])->name('login');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// Forgot password (email OTP verification, same flow as registration)
+Route::get('/forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
+Route::post('/forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendOtp'])->name('password.email');
+Route::get('/forgot-password/verify-otp', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showVerifyOtp'])->name('password.verify.otp');
+Route::post('/forgot-password/verify-otp', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'verifyOtp'])->name('password.verify.otp.post');
+Route::post('/forgot-password/resend-otp', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resendOtp'])->name('password.resend.otp');
+Route::get('/forgot-password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetForm'])->name('password.reset.form');
+Route::post('/forgot-password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword'])->name('password.update');
+
 // Registration routes
 Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])->name('register.store');
@@ -137,6 +146,11 @@ Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::get('/fines/pending/{studentId}', [App\Http\Controllers\FineController::class, 'pending'])->name('fines.pending');
     Route::get('/fines/history', [App\Http\Controllers\FineController::class, 'history'])->name('fines.history');
     Route::post('/fines/pay/{id}', [App\Http\Controllers\FineController::class, 'pay'])->name('fines.pay');
+    Route::post('/fines/initiate-ssl/{id}', [App\Http\Controllers\FineController::class, 'initiateSslPayment'])->name('fines.initiate_ssl');
+    Route::match(['get', 'post'], '/fines/payment/success', [App\Http\Controllers\FineController::class, 'paymentSuccess'])->name('fines.payment.success');
+    Route::match(['get', 'post'], '/fines/payment/fail', [App\Http\Controllers\FineController::class, 'paymentFail'])->name('fines.payment.fail');
+    Route::match(['get', 'post'], '/fines/payment/cancel', [App\Http\Controllers\FineController::class, 'paymentCancel'])->name('fines.payment.cancel');
+    Route::post('/fines/payment/ipn', [App\Http\Controllers\FineController::class, 'paymentIpn'])->name('fines.payment.ipn');
     Route::post('/fines/waive/{id}', [App\Http\Controllers\FineController::class, 'waive'])->name('fines.waive');
     Route::post('/fines/calculate-overdue', [App\Http\Controllers\FineController::class, 'calculateOverdueFines'])->name('fines.calculate_overdue');
 

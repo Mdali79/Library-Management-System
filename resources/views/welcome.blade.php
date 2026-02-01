@@ -27,6 +27,9 @@
                                     <i class="fas fa-eye" id="eyeIcon"></i>
                                 </button>
                             </div>
+                            <div class="text-right mt-1">
+                                <a href="{{ route('password.request') }}" style="font-size: 0.9rem; color: #7c3aed;">Forgot Password?</a>
+                            </div>
                         </div>
                         <button type="submit" name="login" class="btn btn-primary btn-lg btn-block" style="background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
                             <i class="fas fa-sign-in-alt"></i> Login

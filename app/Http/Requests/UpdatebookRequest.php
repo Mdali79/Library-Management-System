@@ -51,7 +51,7 @@ class UpdatebookRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $authors = $this->input('authors', []);
-            
+
             if (empty($authors)) {
                 $validator->errors()->add('authors', 'At least one author is required.');
                 return;

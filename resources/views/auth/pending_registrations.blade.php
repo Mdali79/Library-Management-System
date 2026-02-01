@@ -55,8 +55,7 @@
                                         <div class="btn-group" role="group">
                                             <form action="{{ route('registrations.approve', $registration->id) }}" method="post" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-sm"
-                                                    onclick="return confirm('Approve registration for {{ $registration->name }} as {{ $registration->role }}?')">
+                                                <button type="button" class="btn btn-success btn-sm confirm-delete" data-confirm-title="Confirm Approve" data-confirm-message="Approve registration for {{ $registration->name }} as {{ $registration->role }}?">
                                                     <i class="fas fa-check"></i> Approve
                                                 </button>
                                             </form>
@@ -139,13 +138,13 @@
                 const btnId = $(this).attr('id');
                 const registrationId = btnId.replace('submitReject', '');
                 const form = $('#rejectForm' + registrationId);
-                
+
                 // Find textarea using multiple methods
                 let textarea = form.find('textarea[name="rejection_reason"]');
                 if (textarea.length === 0) {
                     textarea = $('#rejection_reason' + registrationId);
                 }
-                
+
                 // Get the value using native JavaScript to ensure we get the actual value
                 let rejectionReason = '';
                 if (textarea.length > 0) {

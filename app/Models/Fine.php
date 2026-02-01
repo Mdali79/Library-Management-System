@@ -20,6 +20,8 @@ class Fine extends Model
         'payment_method',
         'paid_at',
         'notes',
+        'transaction_id',
+        'gateway_status',
     ];
 
     protected $casts = [

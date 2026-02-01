@@ -82,6 +82,12 @@
                                         <th>Days Overdue:</th>
                                         <td><b>{{ $daysOverdue }} days</b></td>
                                     </tr>
+                                    @if($fine > 0 && isset($settings) && ($settings->fine_grace_period_days ?? 0) > 0)
+                                    <tr class="table-secondary">
+                                        <th>Chargeable days (after {{ $settings->fine_grace_period_days }} day grace):</th>
+                                        <td><b>{{ $chargeableDays ?? 0 }} days</b></td>
+                                    </tr>
+                                    @endif
                                     @if($fine > 0)
                                     <tr class="table-danger">
                                         <th>Fine Amount:</th>

@@ -18,7 +18,6 @@ class CategoryController extends Controller
         return view('category.index', [
             'categories' => category::Paginate(5)
         ]);
-
     }
 
     /**
@@ -39,7 +38,9 @@ class CategoryController extends Controller
      */
     public function store(StorecategoryRequest $request)
     {
-        category::create($request->validated());
+        $data = $request->validated();
+        $data['record_status'] = $data['record_status'] ?? 'published';
+        category::create($data);
         return redirect()->route('categories');
     }
 

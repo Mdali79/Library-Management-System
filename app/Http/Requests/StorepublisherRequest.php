@@ -24,7 +24,7 @@ class StorepublisherRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'=> "required|unique:publishers,name,except,id"
+            'name' => 'required|unique:publishers,name,except,id'
         ];
     }
 }

@@ -17,14 +17,12 @@ class AutherController extends Controller
     public function index(Request $request)
     {
         $query = auther::query();
-        
-        // Search functionality
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('name', 'like', "%{$search}%");
         }
-        
-        // Get suggestions for keyword suggestions
+
         $suggestions = [];
         if ($request->filled('search')) {
             $suggestions = auther::where('name', 'like', "%{$request->search}%")
@@ -32,13 +30,12 @@ class AutherController extends Controller
                 ->pluck('name')
                 ->toArray();
         } else {
-            // Get popular author names for initial suggestions
             $suggestions = auther::orderBy('id', 'desc')
                 ->limit(10)
                 ->pluck('name')
                 ->toArray();
         }
-        
+
         return view('auther.index', [
             'authors' => $query->latest()->paginate(5),
             'filters' => $request->all(),

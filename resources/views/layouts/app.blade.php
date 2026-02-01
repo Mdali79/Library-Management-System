@@ -120,6 +120,33 @@
 
     @yield('content')
 
+    <!-- Global Confirmation Modal (delete or action) -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content" style="border: none; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div class="modal-header" id="confirmDeleteModalHeader" style="border-bottom: 1px solid #eee; padding: 1rem 1.5rem; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border-radius: 12px 12px 0 0;">
+                    <h5 class="modal-title" id="confirmDeleteModalLabel" style="font-weight: 600;">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Confirm Delete
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 1; text-shadow: none;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem; font-size: 1rem;">
+                    <p id="confirmDeleteMessage" class="mb-0">Are you sure you want to delete this item? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #eee; padding: 1rem 1.5rem; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> No, Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteYesBtn">
+                        <span id="confirmDeleteYesIcon"><i class="fas fa-trash-alt"></i></span> <span id="confirmDeleteYesText">Yes, Delete</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Chatbot Button -->
     @if(auth()->user()->role == 'Student')
     <a href="{{ route('chatbot.index') }}" class="chatbot-float-btn" title="Chat with Library Assistant">
@@ -143,6 +170,62 @@
     <script src="{{ asset('js/popper.min.js') }}"></script>
     <script src="{{ asset('js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('js/app.js') }}"></script>
+    <script>
+        // Global confirmation: show modal before submitting any form with .confirm-delete button (delete or action type)
+        (function() {
+            var formToSubmit = null;
+            var headerDangerStyle = 'border-bottom: 1px solid #eee; padding: 1rem 1.5rem; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border-radius: 12px 12px 0 0;';
+            var headerWarningStyle = 'border-bottom: 1px solid #eee; padding: 1rem 1.5rem; background: linear-gradient(135deg, #fd7e14 0%, #e8590c 100%); color: white; border-radius: 12px 12px 0 0;';
+            document.addEventListener('click', function(e) {
+                var btn = e.target.closest && e.target.closest('.confirm-delete');
+                if (!btn) return;
+                var form = btn.closest('form');
+                if (!form) return;
+                e.preventDefault();
+                e.stopPropagation();
+                formToSubmit = form;
+                var msg = btn.getAttribute('data-confirm-message') || 'Are you sure you want to delete this item? This action cannot be undone.';
+                var title = btn.getAttribute('data-confirm-title') || 'Confirm Delete';
+                var confirmType = btn.getAttribute('data-confirm-type') || 'delete';
+                var yesText = btn.getAttribute('data-confirm-yes-text') || 'Yes, Delete';
+                var yesIcon = btn.getAttribute('data-confirm-yes-icon') || 'fa-trash-alt';
+                var titleEl = document.getElementById('confirmDeleteModalLabel');
+                var msgEl = document.getElementById('confirmDeleteMessage');
+                var headerEl = document.getElementById('confirmDeleteModalHeader');
+                var yesIconEl = document.getElementById('confirmDeleteYesIcon');
+                var yesTextEl = document.getElementById('confirmDeleteYesText');
+                var yesBtn = document.getElementById('confirmDeleteYesBtn');
+                if (titleEl) titleEl.innerHTML = '<i class="fas fa-' + (confirmType === 'action' ? 'calculator' : 'exclamation-triangle') + ' mr-2"></i> ' + title;
+                if (msgEl) msgEl.textContent = msg;
+                if (headerEl) headerEl.setAttribute('style', confirmType === 'action' ? headerWarningStyle : headerDangerStyle);
+                if (yesIconEl) yesIconEl.innerHTML = '<i class="fas ' + yesIcon + '"></i>';
+                if (yesTextEl) yesTextEl.textContent = yesText;
+                if (yesBtn) {
+                    yesBtn.classList.remove('btn-danger', 'btn-warning');
+                    yesBtn.classList.add(confirmType === 'action' ? 'btn-warning' : 'btn-danger');
+                }
+                var modal = document.getElementById('confirmDeleteModal');
+                if (modal && typeof jQuery !== 'undefined') {
+                    jQuery(modal).modal('show');
+                }
+            });
+            // Use delegation so Yes button works even if DOMContentLoaded already fired
+            document.addEventListener('click', function(e) {
+                var yesBtn = e.target.closest && e.target.closest('#confirmDeleteYesBtn');
+                if (!yesBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (formToSubmit) {
+                    formToSubmit.submit();
+                    formToSubmit = null;
+                }
+                var modal = document.getElementById('confirmDeleteModal');
+                if (modal && typeof jQuery !== 'undefined') {
+                    jQuery(modal).modal('hide');
+                }
+            });
+        })();
+    </script>
     <script>
         // Ensure menu bar stays sticky below header while scrolling
         (function() {

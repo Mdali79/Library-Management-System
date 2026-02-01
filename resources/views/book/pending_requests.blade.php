@@ -51,7 +51,7 @@
                                             }
                                         @endphp
                                         @if($bookAuthors->count() > 0)
-                                            <small>By: 
+                                            <small>By:
                                                 @foreach($bookAuthors as $author)
                                                     {{ $author->name }}
                                                     @if($author->pivot->is_main_author ?? false)
@@ -80,8 +80,7 @@
                                         <div class="btn-group" role="group">
                                             <form action="{{ route('book_issue.approve', $request->id) }}" method="post" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-success btn-sm" 
-                                                    onclick="return confirm('Approve and issue this book to {{ $request->student->name }}?')"
+                                                <button type="button" class="btn btn-success btn-sm confirm-delete" data-confirm-title="Confirm Approve" data-confirm-message="Approve and issue this book to {{ $request->student->name }}?"
                                                     @if($request->book->available_quantity <= 0) disabled title="Book not available" @endif>
                                                     <i class="fas fa-check"></i> Approve
                                                 </button>
@@ -108,7 +107,7 @@
                                                 <div class="modal-body">
                                                     <div class="form-group">
                                                         <label>Rejection Reason <span class="text-danger">*</span></label>
-                                                        <textarea name="rejection_reason" class="form-control" rows="3" required 
+                                                        <textarea name="rejection_reason" class="form-control" rows="3" required
                                                             placeholder="Please provide a reason for rejection..."></textarea>
                                                     </div>
                                                 </div>

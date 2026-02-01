@@ -10,7 +10,7 @@
                     @if($role === 'Admin')
                         <form action="{{ route('fines.calculate_overdue') }}" method="POST" style="display: inline;">
                             @csrf
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Calculate fines for all overdue books?')">
+                            <button type="button" class="btn btn-warning confirm-delete" data-confirm-type="action" data-confirm-title="Confirm Action" data-confirm-message="Calculate fines for all overdue books? This will update fine records." data-confirm-yes-text="Yes, Calculate" data-confirm-yes-icon="fa-calculator">
                                 <i class="fas fa-calculator"></i> Calculate Overdue Fines
                             </button>
                         </form>
@@ -140,8 +140,7 @@
                                                     data-toggle="modal" data-target="#payModal{{ $fine->id }}">Pay</button>
                                                 <form action="{{ route('fines.waive', $fine->id) }}" method="POST" style="display: inline;">
                                                     @csrf
-                                                    <button type="submit" class="btn btn-sm btn-secondary"
-                                                        onclick="return confirm('Are you sure you want to waive this fine?')">
+                                                    <button type="submit" class="btn btn-sm btn-secondary">
                                                         <i class="fas fa-hand-holding-heart"></i> Waive
                                                     </button>
                                                 </form>
@@ -160,27 +159,53 @@
                                                 <h5 class="modal-title">Pay Fine</h5>
                                                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                                             </div>
-                                            <form action="{{ route('fines.pay', $fine->id) }}" method="POST">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <p><strong>Amount:</strong> {{ number_format($fine->amount, 2) }} tk</p>
-                                                    <div class="form-group">
-                                                        <label>Payment Method <span class="text-danger">*</span></label>
-                                                        <select name="payment_method" class="form-control" required>
-                                                            <option value="cash">Cash</option>
-                                                            <option value="online">Online Payment</option>
-                                                        </select>
+                                            <div class="modal-body">
+                                                <p><strong>Amount:</strong> {{ number_format($fine->amount, 2) }} tk</p>
+                                                @if($role === 'Student')
+                                                    <p class="text-muted small">Choose how you want to pay:</p>
+                                                    <div class="d-flex flex-wrap gap-2">
+                                                        <form action="{{ route('fines.initiate_ssl', $fine->id) }}" method="POST" class="d-inline" id="ssl-pay-form-{{ $fine->id }}">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-primary btn-ssl-pay" data-form-id="ssl-pay-form-{{ $fine->id }}">
+                                                                <i class="fas fa-credit-card"></i> Pay with Card/Bank (SSL)
+                                                            </button>
+                                                        </form>
+                                                        <form action="{{ route('fines.pay', $fine->id) }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <input type="hidden" name="payment_method" value="cash">
+                                                            <input type="hidden" name="amount" value="{{ $fine->amount }}">
+                                                            <button type="submit" class="btn btn-outline-secondary">
+                                                                <i class="fas fa-money-bill"></i> Pay with Cash
+                                                            </button>
+                                                        </form>
                                                     </div>
-                                                    <div class="form-group">
-                                                        <label>Notes</label>
-                                                        <textarea name="notes" class="form-control" rows="2"></textarea>
-                                                    </div>
-                                                </div>
+                                                @else
+                                                    <form action="{{ route('fines.pay', $fine->id) }}" method="POST">
+                                                        @csrf
+                                                        <input type="hidden" name="amount" value="{{ $fine->amount }}">
+                                                        <div class="form-group">
+                                                            <label>Payment Method <span class="text-danger">*</span></label>
+                                                            <select name="payment_method" class="form-control" required>
+                                                                <option value="cash">Cash</option>
+                                                                <option value="online">Online (mark as paid)</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>Notes</label>
+                                                            <textarea name="notes" class="form-control" rows="2"></textarea>
+                                                        </div>
+                                                        <div class="modal-footer px-0 pb-0">
+                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary">Confirm Payment</button>
+                                                        </div>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                            @if($role === 'Student')
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-primary">Confirm Payment</button>
                                                 </div>
-                                            </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -196,5 +221,20 @@
             </div>
         </div>
     </div>
+    <script>
+        // Ensure Pay with Card/Bank (SSL) submits the form (fixes submit inside modal/table)
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest && e.target.closest('.btn-ssl-pay');
+            if (!btn) return;
+            var formId = btn.getAttribute('data-form-id');
+            if (!formId) return;
+            var form = document.getElementById(formId);
+            if (form) {
+                e.preventDefault();
+                e.stopPropagation();
+                form.submit();
+            }
+        });
+    </script>
 @endsection
 

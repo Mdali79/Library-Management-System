@@ -12,6 +12,9 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        'fines/payment/ipn',    // SSLCommerz IPN callback (no CSRF from gateway)
+        'fines/payment/success', // Gateway redirects back with POST; no CSRF token
+        'fines/payment/fail',
+        'fines/payment/cancel',
     ];
 }

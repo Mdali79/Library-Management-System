@@ -137,7 +137,7 @@
                                 <div class="form-group">
                                     <label>Publication Year</label>
                                     <input type="number" class="form-control @error('publication_year') is-invalid @enderror"
-                                        placeholder="e.g., 2024" name="publication_year" 
+                                        placeholder="e.g., 2024" name="publication_year"
                                         value="{{ old('publication_year') }}" min="1000" max="{{ date('Y') + 1 }}">
                                     @error('publication_year')
                                         <div class="alert alert-danger" role="alert">
@@ -150,7 +150,7 @@
                                 <div class="form-group">
                                     <label>Total Quantity <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('total_quantity') is-invalid @enderror"
-                                        placeholder="Total copies" name="total_quantity" value="{{ old('total_quantity', 1) }}" 
+                                        placeholder="Total copies" name="total_quantity" value="{{ old('total_quantity', 1) }}"
                                         min="1" required>
                                     @error('total_quantity')
                                         <div class="alert alert-danger" role="alert">
@@ -162,7 +162,7 @@
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <textarea class="form-control @error('description') is-invalid @enderror" 
+                            <textarea class="form-control @error('description') is-invalid @enderror"
                                 name="description" rows="4" placeholder="Book description...">{{ old('description') }}</textarea>
                             @error('description')
                                 <div class="alert alert-danger" role="alert">
@@ -172,7 +172,7 @@
                         </div>
                         <div class="form-group">
                             <label>Book Cover Image</label>
-                            <input type="file" class="form-control @error('cover_image') is-invalid @enderror" 
+                            <input type="file" class="form-control @error('cover_image') is-invalid @enderror"
                                 name="cover_image" accept="image/*">
                             <small class="form-text text-muted">Max size: 2MB. Formats: JPEG, PNG, JPG, GIF</small>
                             @error('cover_image')
@@ -183,10 +183,10 @@
                         </div>
                         <div class="form-group">
                             <label>PDF File (for Online Reading)</label>
-                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror" 
+                            <input type="file" class="form-control @error('pdf_file') is-invalid @enderror"
                                 name="pdf_file" accept=".pdf,application/pdf">
                             <small class="form-text text-muted">
-                                <i class="fas fa-info-circle"></i> Max size: 50MB. Only PDF files allowed. 
+                                <i class="fas fa-info-circle"></i> Max size: 50MB. Only PDF files allowed.
                                 Students will be able to read the first few chapters online.
                             </small>
                             @error('pdf_file')
@@ -197,7 +197,7 @@
                         </div>
                         <div class="form-group">
                             <label>Preview Pages</label>
-                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror" 
+                            <input type="number" class="form-control @error('preview_pages') is-invalid @enderror"
                                 name="preview_pages" value="{{ old('preview_pages', 50) }}" min="1" max="500">
                             <small class="form-text text-muted">
                                 Number of pages students can read in preview mode (default: 50 pages)
@@ -226,7 +226,7 @@
             const newRow = document.createElement('div');
             newRow.className = 'author-row mb-3 p-3 border rounded';
             newRow.setAttribute('data-row-index', authorRowIndex);
-            
+
             newRow.innerHTML = `
                 <div class="card" style="border: 1px solid #dee2e6; border-radius: 0.5rem;">
                     <div class="card-body p-3">
@@ -247,7 +247,7 @@
                     </div>
                 </div>
             `;
-            
+
             container.appendChild(newRow);
             updateAuthorOptions();
             authorRowIndex++;
@@ -257,16 +257,16 @@
             const row = btn.closest('.author-row');
             const container = document.getElementById('authors-container');
             const rows = container.querySelectorAll('.author-row');
-            
+
             // Don't allow removing if only one author row remains
             if (rows.length <= 1) {
                 alert('At least one author is required.');
                 return;
             }
-            
+
             row.remove();
             updateAuthorOptions();
-            
+
             // Show/hide remove buttons based on number of rows
             const remainingRows = container.querySelectorAll('.author-row');
             remainingRows.forEach((r, index) => {
@@ -280,19 +280,19 @@
         function updateAuthorOptions() {
             const rows = document.querySelectorAll('.author-row');
             const selectedAuthors = [];
-            
+
             rows.forEach(row => {
                 const select = row.querySelector('.author-select');
                 if (select.value) {
                     selectedAuthors.push(select.value);
                 }
             });
-            
+
             rows.forEach(row => {
                 const select = row.querySelector('.author-select');
                 const currentValue = select.value;
                 const options = select.querySelectorAll('option');
-                
+
                 options.forEach(option => {
                     if (option.value === '' || option.value === currentValue) {
                         option.style.display = '';
@@ -343,7 +343,7 @@
                     input.remove();
                 }
             });
-            
+
             const mainAuthorRadio = document.querySelector('.main-author-radio:checked');
             if (mainAuthorRadio) {
                 const mainIndex = mainAuthorRadio.value;
@@ -373,7 +373,7 @@
                 alert('Please select at least one Main Author.');
                 return false;
             }
-            
+
             // Ensure all authors have IDs
             const allAuthorRows = document.querySelectorAll('.author-row');
             let hasError = false;
@@ -384,7 +384,7 @@
                     select.classList.add('is-invalid');
                 }
             });
-            
+
             if (hasError) {
                 e.preventDefault();
                 alert('Please select an author for all author fields.');
@@ -392,7 +392,7 @@
             }
         });
     </script>
-    
+
     <style>
         .author-row {
             margin-bottom: 1rem;

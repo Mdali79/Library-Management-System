@@ -7,6 +7,7 @@ use App\Models\book_issue;
 use App\Models\student;
 use App\Models\Fine;
 use App\Models\category;
+use App\Services\FineCalculator;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -45,7 +46,7 @@ class ReportsController extends Controller
 
     public function not_returned()
     {
-        return view('report.notReturned',[
+        return view('report.notReturned', [
             'books' => book_issue::where('issue_status', 'N')
                 ->with(['book', 'student'])
                 ->latest()
@@ -129,7 +130,8 @@ class ReportsController extends Controller
             ->with(['book', 'student'])
             ->get()
             ->map(function ($issue) {
-                $issue->days_overdue = Carbon::parse($issue->return_date)->diffInDays(Carbon::now());
+                $result = FineCalculator::calculate($issue->return_date, null, null);
+                $issue->days_overdue = $result['days_overdue'];
                 return $issue;
             });
 
@@ -173,7 +175,7 @@ class ReportsController extends Controller
     public function categoryStatistics()
     {
         $categories = category::withCount(['books as total_books'])
-            ->with(['books' => function($query) {
+            ->with(['books' => function ($query) {
                 $query->select('category_id', 'available_quantity', 'issued_quantity');
             }])
             ->get()
@@ -198,35 +200,35 @@ class ReportsController extends Controller
 
         // This would typically use libraries like dompdf or maatwebsite/excel
         // For now, we'll return a view that can be converted to PDF
-        
+
         switch ($type) {
             case 'book':
                 $data = book::with(['auther', 'category', 'publisher'])->get();
                 return view('report.exports.bookExport', ['books' => $data]);
-            
+
             case 'member':
                 $data = student::with('user')->get();
                 return view('report.exports.memberExport', ['members' => $data]);
-            
+
             case 'return':
                 $data = book_issue::where('issue_status', 'Y')->with(['book', 'student'])->get();
                 return view('report.exports.returnExport', ['returns' => $data]);
-            
+
             case 'overdue':
                 $data = book_issue::where('issue_status', 'N')
                     ->where('return_date', '<', Carbon::now())
                     ->with(['book', 'student'])
                     ->get();
                 return view('report.exports.overdueExport', ['overdueBooks' => $data]);
-            
+
             case 'fine':
                 $data = Fine::with(['bookIssue.book', 'student'])->get();
                 return view('report.exports.fineExport', ['fines' => $data]);
-            
+
             case 'category':
                 $data = category::with('books')->get();
                 return view('report.exports.categoryExport', ['categories' => $data]);
-            
+
             default:
                 return redirect()->back()->withErrors(['error' => 'Invalid export type']);
         }
