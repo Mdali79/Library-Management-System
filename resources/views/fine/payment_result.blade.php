@@ -24,7 +24,6 @@
                             <h4 class="text-danger font-weight-bold mb-2">Payment Failed</h4>
                             <p class="text-muted mb-4">{{ $message ?: 'Payment could not be completed. Your fine remains pending.' }}</p>
                         @endif
-                        <p class="text-muted small mb-3">Returning from the payment gateway may have ended your session. If you see the login page, sign in and you will be taken to My Fines.</p>
                         <a href="{{ route('fines.index') }}" class="btn btn-primary btn-lg">
                             <i class="fas fa-list mr-2"></i> Go to My Fines
                         </a>

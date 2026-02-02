@@ -55,7 +55,7 @@
                                         <div class="btn-group" role="group">
                                             <form action="{{ route('registrations.approve', $registration->id) }}" method="post" class="d-inline">
                                                 @csrf
-                                                <button type="button" class="btn btn-success btn-sm confirm-delete" data-confirm-title="Confirm Approve" data-confirm-message="Approve registration for {{ $registration->name }} as {{ $registration->role }}?">
+                                                <button type="button" class="btn btn-success btn-sm confirm-delete" data-confirm-type="action" data-confirm-title="Confirm Approve" data-confirm-message="Approve registration for {{ $registration->name }} as {{ $registration->role }}?" data-confirm-yes-text="Yes, Approve" data-confirm-yes-icon="fa-check">
                                                     <i class="fas fa-check"></i> Approve
                                                 </button>
                                             </form>
