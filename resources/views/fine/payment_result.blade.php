@@ -1,0 +1,39 @@
+@extends('layouts.guest')
+@section('content')
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body text-center p-5">
+                        @if($status === 'success')
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4 class="text-success font-weight-bold mb-2">Payment Successful</h4>
+                            <p class="text-muted mb-4">{{ $message ?: 'Your fine has been paid successfully.' }}</p>
+                        @elseif($status === 'cancelled')
+                            <div class="mb-4">
+                                <i class="fas fa-times-circle text-warning" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4 class="text-warning font-weight-bold mb-2">Payment Cancelled</h4>
+                            <p class="text-muted mb-4">{{ $message ?: 'You cancelled the payment. Your fine remains pending.' }}</p>
+                        @else
+                            <div class="mb-4">
+                                <i class="fas fa-exclamation-circle text-danger" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4 class="text-danger font-weight-bold mb-2">Payment Failed</h4>
+                            <p class="text-muted mb-4">{{ $message ?: 'Payment could not be completed. Your fine remains pending.' }}</p>
+                        @endif
+                        <p class="text-muted small mb-3">Returning from the payment gateway may have ended your session. If you see the login page, sign in and you will be taken to My Fines.</p>
+                        <a href="{{ route('fines.index') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-list mr-2"></i> Go to My Fines
+                        </a>
+                        <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-lg ml-2">
+                            <i class="fas fa-home mr-2"></i> Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection

@@ -53,6 +53,11 @@ Route::post('/resend-otp', [App\Http\Controllers\Auth\RegisterController::class,
 Route::get('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify');
 Route::post('/verify', [App\Http\Controllers\Auth\RegisterController::class, 'verify'])->name('verify.store');
 
+// Payment callbacks (no auth – gateway redirects back and session cookie may not be sent)
+Route::match(['get', 'post'], '/fines/payment/success', [App\Http\Controllers\FineController::class, 'paymentSuccess'])->name('fines.payment.success');
+Route::match(['get', 'post'], '/fines/payment/fail', [App\Http\Controllers\FineController::class, 'paymentFail'])->name('fines.payment.fail');
+Route::match(['get', 'post'], '/fines/payment/cancel', [App\Http\Controllers\FineController::class, 'paymentCancel'])->name('fines.payment.cancel');
+Route::get('/fines/payment/result', [App\Http\Controllers\FineController::class, 'paymentResult'])->name('fines.payment.result');
 
 Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::get('change-password', [dashboardController::class, 'change_password_view'])->name('change_password_view');
@@ -147,9 +152,6 @@ Route::middleware(['auth', 'verified.user'])->group(function () {
     Route::get('/fines/history', [App\Http\Controllers\FineController::class, 'history'])->name('fines.history');
     Route::post('/fines/pay/{id}', [App\Http\Controllers\FineController::class, 'pay'])->name('fines.pay');
     Route::post('/fines/initiate-ssl/{id}', [App\Http\Controllers\FineController::class, 'initiateSslPayment'])->name('fines.initiate_ssl');
-    Route::match(['get', 'post'], '/fines/payment/success', [App\Http\Controllers\FineController::class, 'paymentSuccess'])->name('fines.payment.success');
-    Route::match(['get', 'post'], '/fines/payment/fail', [App\Http\Controllers\FineController::class, 'paymentFail'])->name('fines.payment.fail');
-    Route::match(['get', 'post'], '/fines/payment/cancel', [App\Http\Controllers\FineController::class, 'paymentCancel'])->name('fines.payment.cancel');
     Route::post('/fines/payment/ipn', [App\Http\Controllers\FineController::class, 'paymentIpn'])->name('fines.payment.ipn');
     Route::post('/fines/waive/{id}', [App\Http\Controllers\FineController::class, 'waive'])->name('fines.waive');
     Route::post('/fines/calculate-overdue', [App\Http\Controllers\FineController::class, 'calculateOverdueFines'])->name('fines.calculate_overdue');

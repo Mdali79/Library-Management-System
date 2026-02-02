@@ -196,37 +196,36 @@ class FineController extends Controller
     }
 
     /**
-     * SSLCommerz success callback. Validate and mark fine paid.
+     * SSLCommerz success callback. Validate and mark fine paid. No auth required (gateway redirect).
      */
     public function paymentSuccess(Request $request)
     {
-        // Gateway may redirect with GET (query) or POST (body)
         $fineId = $request->get('fine_id');
         $valId = $request->get('val_id') ?? $request->get('tran_id');
 
         if (!$fineId || !$valId) {
-            return redirect()->route('fines.index')->withErrors(['error' => 'Invalid callback.']);
+            return redirect()->route('fines.payment.result', ['status' => 'fail', 'message' => 'Invalid callback.']);
         }
 
         $fine = Fine::find($fineId);
         if (!$fine) {
-            return redirect()->route('fines.index')->withErrors(['error' => 'Fine not found.']);
+            return redirect()->route('fines.payment.result', ['status' => 'fail', 'message' => 'Fine not found.']);
         }
 
         if ($fine->status === 'paid' && $fine->transaction_id === $valId) {
-            return redirect()->route('fines.index')->with('success', 'Payment already recorded.');
+            return redirect()->route('fines.payment.result', ['status' => 'success', 'message' => 'Payment already recorded.']);
         }
 
         $service = new SslCommerzService();
         $validation = $service->validateTransaction($valId);
 
         if (!$validation['valid'] || ($validation['status'] ?? '') !== 'VALID') {
-            return redirect()->route('fines.index')->withErrors(['error' => 'Payment validation failed or transaction was not successful.']);
+            return redirect()->route('fines.payment.result', ['status' => 'fail', 'message' => 'Payment validation failed or transaction was not successful.']);
         }
 
         $gatewayAmount = $validation['amount'] ?? null;
         if ($gatewayAmount !== null && abs((float) $gatewayAmount - (float) $fine->amount) > 0.01) {
-            return redirect()->route('fines.index')->withErrors(['error' => 'Payment amount mismatch.']);
+            return redirect()->route('fines.payment.result', ['status' => 'fail', 'message' => 'Payment amount mismatch.']);
         }
 
         $fine->status = 'paid';
@@ -237,23 +236,47 @@ class FineController extends Controller
         $fine->notes = ($fine->notes ?? '') . ' | Paid via SSL (Gateway)';
         $fine->save();
 
-        return redirect()->route('fines.index')->with('success', 'Fine paid successfully via SSL payment.');
+        // Sync related book_issue so due/fine amount display is updated
+        $issue = $fine->bookIssue;
+        if ($issue) {
+            $issue->fine_amount = 0;
+            $issue->save();
+        }
+
+        return redirect()->route('fines.payment.result', ['status' => 'success', 'message' => 'Fine paid successfully via bKash/SSL.']);
     }
 
     /**
-     * SSLCommerz fail callback.
+     * SSLCommerz fail callback. No auth required (gateway redirect).
      */
     public function paymentFail(Request $request)
     {
-        return redirect()->route('fines.index')->withErrors(['error' => 'Payment failed or was declined. Your fine remains pending.']);
+        return redirect()->route('fines.payment.result', ['status' => 'fail', 'message' => 'Payment failed or was declined. Your fine remains pending.']);
     }
 
     /**
-     * SSLCommerz cancel callback.
+     * SSLCommerz cancel callback. No auth required (gateway redirect).
      */
     public function paymentCancel(Request $request)
     {
-        return redirect()->route('fines.index')->withErrors(['error' => 'Payment was cancelled. Your fine remains pending.']);
+        return redirect()->route('fines.payment.result', ['status' => 'cancelled', 'message' => 'Payment was cancelled. Your fine remains pending.']);
+    }
+
+    /**
+     * Payment result page (success / fail / cancelled). No auth required.
+     */
+    public function paymentResult(Request $request)
+    {
+        $status = $request->query('status', 'fail');
+        $message = $request->query('message', '');
+        $allowed = ['success', 'fail', 'cancelled'];
+        if (!in_array($status, $allowed, true)) {
+            $status = 'fail';
+        }
+        return view('fine.payment_result', [
+            'status' => $status,
+            'message' => $message,
+        ]);
     }
 
     /**
