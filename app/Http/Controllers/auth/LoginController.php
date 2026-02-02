@@ -49,6 +49,14 @@ class LoginController extends Controller
         if (Auth::attempt($credentials)) {
             // Set session flag to show welcome splash screen only on login success
             $request->session()->put('show_welcome_splash', true);
+            // Redirect to intended URL (e.g. after payment result page)
+            $redirect = $request->input('redirect');
+            if ($redirect && is_string($redirect)) {
+                $path = parse_url($redirect, PHP_URL_PATH) ?: $redirect;
+                if ($path && str_starts_with($path, '/') && !str_starts_with($path, '//')) {
+                    return redirect($path);
+                }
+            }
             return redirect('/dashboard');
         } else {
             return redirect()->back()->withErrors(['username' => 'Invalid username or password'])->withInput($request->only('username'));

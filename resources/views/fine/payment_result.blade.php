@@ -24,12 +24,22 @@
                             <h4 class="text-danger font-weight-bold mb-2">Payment Failed</h4>
                             <p class="text-muted mb-4">{{ $message ?: 'Payment could not be completed. Your fine remains pending.' }}</p>
                         @endif
-                        <a href="{{ route('fines.index') }}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-list mr-2"></i> Go to My Fines
-                        </a>
-                        <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-lg ml-2">
-                            <i class="fas fa-home mr-2"></i> Home
-                        </a>
+                        @auth
+                            <a href="{{ route('fines.index') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-list mr-2"></i> Go to My Fines
+                            </a>
+                            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary btn-lg ml-2">
+                                <i class="fas fa-home mr-2"></i> Home
+                            </a>
+                        @else
+                            <p class="text-muted small mb-3">You may have been signed out after payment. Log in to see your updated fines.</p>
+                            <a href="{{ url('/') }}?redirect={{ urlencode(route('fines.index')) }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt mr-2"></i> Log in to view My Fines
+                            </a>
+                            <a href="{{ url('/') }}" class="btn btn-outline-secondary btn-lg ml-2">
+                                <i class="fas fa-home mr-2"></i> Home
+                            </a>
+                        @endauth
                     </div>
                 </div>
             </div>

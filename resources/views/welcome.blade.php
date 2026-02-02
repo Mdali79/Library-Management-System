@@ -10,6 +10,9 @@
                     </div>
                     <form class="yourform" action="{{ route('login') }}" method="post">
                         @csrf
+                        @if(request('redirect'))
+                            <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+                        @endif
                         <h3 class="heading">
                             <i class="fas fa-book-reader"></i> User Login
                         </h3>
